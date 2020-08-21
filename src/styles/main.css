@@ -7,5 +7,50 @@ body {
 }
 
 body {
-  background-color: cornflowerblue;
+}
+
+.container {
+  display: flex;
+  flex-direction: column;
+  align-content: stretch;
+  height: 100%;
+}
+.fire {
+  flex: 1 0 50%;
+  position: relative;
+}
+.title {
+  position: absolute;
+  left: 10px;
+  top: 0;
+}
+.fire-wood {
+  width: 38px;
+  height: 29px;
+  position: absolute;
+  left: 50%;
+  top: calc(70% + 12px);
+  transform: translate(-50%, -50%);
+  background-image: url(/src/a/kenney/cp_wood.png);
+}
+.fire-flame {
+  width: 50px;
+  height: 61px;
+  position: absolute;
+  left: 50%;
+  top: calc(70%);
+  transform: translate(-50%, -75%);
+  background-image: url(/src/a/kenney/flame.png);
+  background-size: cover;
+  opacity: 0.9;
+}
+.inventory {
+  flex: 1 0 50%;
+}
+.inventory td {
+  background-color: antiquewhite;
+}
+.inventory-table{
+  width: 100%;
+  height: 100%;
 }
