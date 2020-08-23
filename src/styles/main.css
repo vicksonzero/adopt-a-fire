@@ -7,6 +7,7 @@ body {
 }
 
 body {
+  background-color: #fff;
 }
 
 .container {
@@ -23,6 +24,13 @@ body {
   position: absolute;
   left: 10px;
   top: 0;
+  pointer-events: none;
+}
+.debug {
+  position: absolute;
+  left: 10px;
+  top: 64px;
+  pointer-events: none;
 }
 .fire-wood {
   width: 38px;
@@ -31,7 +39,10 @@ body {
   left: 50%;
   top: calc(70% + 12px);
   transform: translate(-50%, -50%);
-  background-image: url(/src/a/kenney/cp_wood.png);
+  background-image: url(../a/kenney/cp_wood.png);
+  background-size: contain;
+  background-repeat: no-repeat;
+  background-position: center center;
 }
 .fire-flame {
   width: 50px;
@@ -40,8 +51,10 @@ body {
   left: 50%;
   top: calc(70%);
   transform: translate(-50%, -75%);
-  background-image: url(/src/a/kenney/flame.png);
-  background-size: cover;
+  background-image: url(../a/kenney/flame.png);
+  background-size: contain;
+  background-repeat: no-repeat;
+  background-position: center center;
   opacity: 0.9;
 }
 .inventory {
@@ -50,7 +63,20 @@ body {
 .inventory td {
   background-color: antiquewhite;
 }
-.inventory-table{
+.inventory-table {
+  width: 100%;
+  height: 100%;
+}
+
+.wood {
+  background-image: url(../a/kenney/log_stack.png);
+  background-size: 100vmin;
+  background-position: 50% 60%;
+  background-repeat: no-repeat;
+  width: 100%;
+  height: 100%;
+}
+.move {
   width: 100%;
   height: 100%;
 }

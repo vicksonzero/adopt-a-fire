@@ -50,16 +50,10 @@ npm run build
 
 This will generate two files `index.html` and `build.zip` both located in the `dist/` folder. The zip file contains only the generated `index.html`. The output from the command also tells you how large is the generated zip file.
 
-## Where does my code go?
-
-All your javascript files should be located in the `src/app/` directory. The entry point is the `main.js` file. All your css should be located in the `src/styles` directory. The entry point is `main.css`. If you need to modify the html file, you can find the template used in `src/index.html`.
-
-This project uses webpack for module bundling. This means that all the files that you want to use should be imported directly or indirectly by either `main.js` or `main.css`.
-
-## ES2015+ support
-
-This repository used to include [Babel](https://babeljs.io/) to enable working with modern JavaScript. As time progresses however the browser support for modern JS became excelent and webpack began shipping a newer version of uglify that can minify it. All of this makes it a rational choice to omit Babel as it would only increase the overall bundle size.
 
 ## Resources
 
 1. Webpack [https://webpack.js.org/](https://webpack.js.org/)
+2. miniDragAndDrop [https://xem.github.io/miniDragAndDrop/](https://xem.github.io/miniDragAndDrop/)
+
+
