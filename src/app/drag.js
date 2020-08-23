@@ -2,7 +2,7 @@
 
 // D = drag and drop persistent thing
 exports.dragAndDrop = delegates => {
-    // declare all varialbes at the front to help minify
+    // declare all variables at the front to help minify
     /** @type HTMLElement */
     let dragOrigin;
     /** @type HTMLElement */
