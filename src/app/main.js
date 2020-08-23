@@ -25,15 +25,20 @@ const gameOverTemp = 100;
 
 let state = {};
 
+let isDragging = false;
 dragAndDrop({
     // return false to to skip DropResponse
     onDrop(item, dropTarget) {
+        isDragging = false;
         if (dropTarget.classList.contains("fire")) {
             addFuel(makeFuelUnit(state.frameID, 1, 0, { temp: 25 }));
             return false;
         }
 
         return true;
+    },
+    onDrag() {
+        isDragging = true;
     }
 });
 d.querySelector('button.btn-debug').addEventListener('click', () => {
@@ -45,7 +50,7 @@ d.querySelector('button.btn-verbose').addEventListener('click', () => {
 
 const bindButtons = () => {
     d.querySelector('button.start').addEventListener('click', () => {
-        addSpark(3600);
+        addSpark(400);
     });
     const $reset = d.querySelector('button.reset')
     if ($reset) $reset.addEventListener('click', () => {
@@ -160,15 +165,21 @@ const init = () => {
         oxygen: 100,
         oxygenDepreciation: 0.92, // smaller means less gas remains
         _remainingOxygen: 0,
+        _largestFlame: 0,
         fuels: [
-            makeFuelUnit(0, 0.5, 0.5, {
+            makeFuelUnit(0, 0.25, 0.5, {
                 temp: 25,
             }),
-            makeFuelUnit(0, 0.5, 0.5, {
+            makeFuelUnit(0, 0.25, 0.5, {
                 temp: 25,
-                heatUpRate: 0.5,
             }),
-            makeFuelUnit(0, 0.5, 0.5, {
+            makeFuelUnit(0, 0.25, 0.5, {
+                temp: 25,
+            }),
+            makeFuelUnit(0, 0.25, 0.5, {
+                temp: 25,
+            }),
+            makeFuelUnit(0, 0.25, 0.5, {
                 temp: 25,
             }),
         ],
@@ -253,11 +264,12 @@ const tick = (state) => {
     newState.heat += heatBudget * 0.8 * easeOut(totalFuel / 1600);
     newState._remainingOxygen = newState.oxygen;
     newState.oxygen = air.oxygen + (wind.oxygen || 0);
+    newState._largestFlame = Math.max(newState._largestFlame, newState.heat);
 
     // console.log(`delta-heat: ${newState.heat - heat}`);
 
 
-    if (Math.random() <= woodSpawnRate) {
+    if (!isDragging && Math.random() <= woodSpawnRate) {
         const ii = Math.floor(Math.random() * inventoryHeight);
         const jj = Math.floor(Math.random() * inventoryWidth);
 
@@ -295,6 +307,7 @@ const render = (state) => {
         fuels,
         air,
         wind,
+        _largestFlame,
     } = state;
     // const availableFuels = (fuels
     //     .filter(f => f._oxygenGiven > 0)
@@ -338,19 +351,21 @@ const render = (state) => {
 
     if (debugMode === 2) {
         $debug.style.display = 'block';
-        $debug.innerHTML = `<pre>` +
-            `frameID: #${frameID} (${frameID * frameSize / 1000}s), timeScale: ${timeScale}\n` +
-            `totalFuel: ${totalFuel.toFixed(2)}\n` +
-            `heat: ${heat.toFixed(2)}\n` +
-            `ashHeat: ${ashStr.toFixed(2)}\n` +
-            `oxygen: ${_remainingOxygen.toFixed(2)}/${oxygen.toFixed(2)}\n` +
-            `fuels:   value     temp   _tHeat  _dHeat     _o2    _dO2\n` +
-            `${fuelStr}\n` +
-            `air: \n${str4(air)}\n` +
-            `wind: \n${str4(wind)}\n` +
-            `_largestFrameSkip: ${largestFrameSkip}\n_totalFrameSkipped: ${framesSkipped}\n` +
+        $debug.innerHTML = [`<pre>`,
+            `frameID: #${frameID} (${frameID * frameSize / 1000}s), timeScale: ${timeScale}\n`,
+            `totalFuel: ${totalFuel.toFixed(2)}\n`,
+            `heat: ${heat.toFixed(2)}\n`,
+            `ashHeat: ${ashStr.toFixed(2)}\n`,
+            `oxygen: ${_remainingOxygen.toFixed(2)}/${oxygen.toFixed(2)}\n`,
+            `fuels:   value     temp   _tHeat  _dHeat     _o2    _dO2\n`,
+            `${fuelStr}\n`,
+            `air: \n${str4(air)}\n`,
+            `wind: \n${str4(wind)}\n`,
+            `_largestFrameSkip: ${largestFrameSkip}\n`,
+            `_totalFrameSkipped: ${framesSkipped}\n`,
+            `_largestFlame: ${_largestFlame}\n`,
             `</pre>`
-            ;
+        ].join('\n');
     }
     // $result.innerHTML = `` +
     //     `<h2>Game Over</h2>` +
@@ -358,11 +373,16 @@ const render = (state) => {
 };
 
 const doGameOver = (state) => {
+    const { isRunning, frameID, fuels, heat, oxygen, heatTransferRate, air, wind, woodSpawnRate, _largestFlame } = state;
+
     $result.style.display = 'flex';
-    $resultTitle.innerHTML = 'GameOver';
+    $resultTitle.innerHTML = 'It went out';
     $resultBody.innerHTML = `
-    <p>Drag wood to add fuel. Keep the fire alive</p>
-    <button class="start">Make a spark</button>
+    <ul>
+        <li>Play time: ${(frameID * frameSize / 1000).toFixed(1)} seconds</li>
+        <li>Largest flame made: ${_largestFlame}</li>
+    </ul>
+    <button class="start">Add spark</button>
     <button class="reset">Reset</button>
     `;
     bindButtons();
