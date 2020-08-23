@@ -41,20 +41,21 @@ dragAndDrop({
         isDragging = true;
     }
 });
-d.querySelector('button.btn-debug').addEventListener('click', () => {
+d.querySelector('button.btn-debug').addEventListener('pointerup', () => {
     debugMode = debugMode !== 1 ? 1 : 0;
 });
-d.querySelector('button.btn-verbose').addEventListener('click', () => {
+d.querySelector('button.btn-verbose').addEventListener('pointerup', () => {
     debugMode = debugMode !== 2 ? 2 : 0;
 });
 
 const bindButtons = () => {
-    d.querySelector('button.start').addEventListener('click', () => {
+    d.querySelector('button.start').addEventListener('pointerup', () => {
         addSpark(400);
     });
     const $reset = d.querySelector('button.reset')
-    if ($reset) $reset.addEventListener('click', () => {
-        init();
+    if ($reset) $reset.addEventListener('pointerup', () => {
+        console.log('reset', state.frameID);
+        init(state.frameID);
     });
 };
 bindButtons();
@@ -121,10 +122,10 @@ function makeFuelUnit(frameID, chunkSize, variation, override = {}) {
         frameID,
         heatReq: 300 * chunkSize,
         heatUpRate: 0.009 / chunkSize,
-        coolDownRate: 0.01 / chunkSize,
+        coolDownRate: 0.015 / chunkSize,
         oxygenReq: 2 * chunkSize,
         fuelReq: 0.08,
-        givesHeatPerTick: 54,
+        givesHeatPerTick: 54 * Math.pow(chunkSize, 1 / 2),
         value: Math.floor(300 * chunkSize * (1 + Math.random() * variation)),
         temp: 25,
         _transferredHeat: 0,
@@ -154,12 +155,13 @@ const fuelToString = (indent, fuelCount) => (fuel, i) => {
         ``;
 };
 
-const init = () => {
+const init = (fromFrame) => {
     const newState = {
         isRunning: false,
         woodSpawnRate: 0.01,
         maxTemp: 0,
-        frameID: 0,
+        fromFrame: fromFrame,
+        frameID: fromFrame,
         heat: 25,
         heatTransferRate: 0.7,
         oxygen: 100,
@@ -167,19 +169,25 @@ const init = () => {
         _remainingOxygen: 0,
         _largestFlame: 0,
         fuels: [
-            makeFuelUnit(0, 0.25, 0.5, {
+            makeFuelUnit(0, 0.2, 0.5, {
                 temp: 25,
             }),
-            makeFuelUnit(0, 0.25, 0.5, {
+            makeFuelUnit(0, 0.2, 0.5, {
                 temp: 25,
             }),
-            makeFuelUnit(0, 0.25, 0.5, {
+            makeFuelUnit(0, 0.2, 0.5, {
                 temp: 25,
             }),
-            makeFuelUnit(0, 0.25, 0.5, {
+            makeFuelUnit(0, 0.2, 0.5, {
                 temp: 25,
             }),
-            makeFuelUnit(0, 0.25, 0.5, {
+            makeFuelUnit(0, 0.2, 0.5, {
+                temp: 25,
+            }),
+            makeFuelUnit(0, 0.2, 0.5, {
+                temp: 25,
+            }),
+            makeFuelUnit(0, 0.2, 0.5, {
                 temp: 25,
             }),
         ],
@@ -373,16 +381,16 @@ const render = (state) => {
 };
 
 const doGameOver = (state) => {
-    const { isRunning, frameID, fuels, heat, oxygen, heatTransferRate, air, wind, woodSpawnRate, _largestFlame } = state;
+    const { isRunning, fromFrame, frameID, fuels, heat, oxygen, heatTransferRate, air, wind, woodSpawnRate, _largestFlame } = state;
 
     $result.style.display = 'flex';
     $resultTitle.innerHTML = 'It went out';
     $resultBody.innerHTML = `
     <ul>
-        <li>Play time: ${(frameID * frameSize / 1000).toFixed(1)} seconds</li>
+        <li>Play time: ${((frameID - fromFrame) * frameSize / 1000).toFixed(1)} seconds</li>
         <li>Largest flame made: ${_largestFlame}</li>
     </ul>
-    <button class="start">Add spark</button>
+    <button class="start">Add more spark!</button><br />
     <button class="reset">Reset</button>
     `;
     bindButtons();
@@ -392,7 +400,7 @@ const doResumeGame = (state) => {
 };
 
 const main = () => {
-    init();
+    init(0);
     lastTick = Date.now();
     render(state);
 

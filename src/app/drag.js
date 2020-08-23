@@ -25,6 +25,7 @@ exports.dragAndDrop = delegates => {
     let doDropResponse;
     const d = document;
     const onDrop = delegates.onDrop || (() => { });
+    const onDrag = delegates.onDrag || (() => { });
 
 
     const pointerdown = e => {
@@ -46,6 +47,7 @@ exports.dragAndDrop = delegates => {
         if (dragOrigin == d) {
             dragOrigin = null;
         } else if (dragOrigin.parentNode.classList.contains("move") || dragOrigin.parentNode.classList.contains("copy")) {
+            onDrag();
             dragX = e.touches ? e.touches[0].pageX : e.pageX;
             dragY = e.touches ? e.touches[0].pageY : e.pageY;
             const globalRect = dragOrigin.getBoundingClientRect();
@@ -79,16 +81,16 @@ exports.dragAndDrop = delegates => {
 
     const pointerup = e => {
         e.preventDefault();
-        isDragging = 0;
-        if (e.touches) {
-            dropTarget = d.elementFromPoint(
-                dragX,
-                dragY
-            );
-        } else {
-            dropTarget = e.target;
-        }
         if (dragContainer) {
+            isDragging = 0;
+            if (e.touches) {
+                dropTarget = d.elementFromPoint(
+                    dragX,
+                    dragY
+                );
+            } else {
+                dropTarget = e.target;
+            }
 
             // loop find a drop target until hits `document`
             while (dropTarget != d && !dropTarget.classList.contains("drop")) {
@@ -114,9 +116,9 @@ exports.dragAndDrop = delegates => {
         }
     }
     addEventListener("mousedown", pointerdown);
-    addEventListener("touchstart", pointerdown);
+    addEventListener("touchstart", pointerdown, { passive: false });
     addEventListener("mousemove", pointermove);
     addEventListener("touchmove", pointermove, { passive: false });
     addEventListener("mouseup", pointerup);
-    addEventListener("touchend", pointerup);
+    addEventListener("touchend", pointerup, { passive: false });
 };
