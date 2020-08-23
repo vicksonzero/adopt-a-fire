@@ -7,15 +7,48 @@ const d = document;
 // const qs = 'querySelector';
 // const qsa = 'querySelectorAll';
 // const ce = 'createElement';
-const str = a => JSON.stringify(a, null, 4);
+const str1 = a => JSON.stringify(a);
+const str4 = a => JSON.stringify(a, null, 4);
 const par = JSON.parse;
+
+
+const frameSize = 100; // 10 fps
+const timeScale = 1;
+
+let lastTick = 0;
+let largestFrameSkip = 0;
+let framesSkipped = 0;
+const _save = [];
+
+let state = {
+    frameID: 0,
+    flameSize: 1,
+    heat: 300,
+    heatTransferRate: 0.5,
+    oxygen: 100,
+    remainingOxygen: 0,
+    fuels: [
+        makeFuelUnit(0, 1, { value: 300 + Math.floor(Math.random() * 100), temp: 500 }),
+        makeFuelUnit(0, 1, { value: 300 + Math.floor(Math.random() * 100), temp: 500 }),
+        makeFuelUnit(0, 1, { value: 300 + Math.floor(Math.random() * 100), temp: 500 }),
+        makeFuelUnit(0, 1, { value: 300 + Math.floor(Math.random() * 100), temp: 25 }),
+    ],
+    air: {
+        heat: -10,
+        oxygen: 30,
+    },
+    wind: {
+        //     oxygen: 20,
+        //     heat: -40,
+    },
+    woodSpawnRate: 0.05,
+};
 
 dragAndDrop({
     // return false to to skip DropResponse
     onDrop(item, dropTarget) {
         if (dropTarget.classList.contains("fire")) {
-            state.flameSize += 0.3;
-            state.fuels.push(makeFuelUnit(1, { temp: 25 }));
+            addFuel(makeFuelUnit(state.frameID, 1, { temp: 25 }));
             return false;
         }
 
@@ -35,8 +68,10 @@ const $flame = d.querySelector('.fire-flame');
 
 const flameW = $flame.offsetWidth;
 const flameH = $flame.offsetHeight;
+const flameScale = 500;
 const woodW = $wood.offsetWidth;
 const woodH = $wood.offsetHeight;
+const woodScale = 500;
 
 (d.querySelector('.inventory-table')
     .append(...([...Array(inventoryHeight)].map(() => {
@@ -59,24 +94,27 @@ const woodH = $wood.offsetHeight;
     })))
 );
 
-const makeFuelUnit = (chunkSize, override = {}) => {
+function makeFuelUnit(frameID, chunkSize, override = {}) {
     return {
+        frameID,
         heatReq: 300,
-        heatUpRate: 0.008,
+        heatUpRate: 0.005,
         coolDownRate: 0.02,
         oxygenReq: 2,
-        fuelReq: 1,
+        fuelReq: 0.5,
         givesHeatPerTick: 60,
         value: 300,
         temp: 25,
+        transferredHeat: 0,
         ...override,
     };
 }
-const fuelStr = (indent) => (fuel, i, arr) => {
+const fuelToString = (indent, fuelCount) => (fuel, i) => {
     return [...Array(indent + 1)].join(' ') +
-        `${arr.length - 1 - i}.`.padStart(Math.ceil(Math.log10(arr.length)) + 1) + ' ' +
+        `${fuelCount - 1 - i}.`.padStart(Math.ceil(Math.log10(fuelCount)) + 1) + ' ' +
         `${fuel.value.toFixed(2)}`.padStart(4) + ' ' +
         `${fuel.temp.toFixed(2)}`.padStart(8) + ' ' +
+        `${fuel.transferredHeat.toFixed(2)}`.padStart(8) + ' ' +
         [...Array(4)].join(' ') +
         `${fuel.heatReq}`.padStart(4) + ' ' +
         `${fuel.heatUpRate}`.padStart(4) + ' ' +
@@ -84,46 +122,21 @@ const fuelStr = (indent) => (fuel, i, arr) => {
         `${fuel.oxygenReq}`.padStart(4) + ' ' +
         `${fuel.fuelReq}`.padStart(4) + ' ' +
         `${fuel.givesHeatPerTick}`.padStart(4) + ' ' +
+        `${fuel.frameID}`.padStart(4) + ' ' +
         ``;
 }
 function easeOut(x) {
     return 1 - Math.pow(1 - x, 6);
 }
 
-const frameSize = 100; // 10 fps
-const timeScale = 0.1;
-
-let lastTick = 0;
-let largestFrameSkip = 0;
-let framesSkipped = 0;
-
-let state = {
-    frameID: 0,
-    flameSize: 1,
-    heat: 0,
-    heatTransferRate: 0.5,
-    oxygen: 100,
-    fuels: [],
-    air: {
-        heat: -10,
-        oxygen: 10,
-    },
-    wind: {
-        //     oxygen: 20,
-        //     heat: -40,
-    },
-    woodSpawnRate: 0.05,
-};
+// @ts-ignore
+window.save = () => {
+    console.log(_save);
+}
 
 const init = (state) => {
-    state.fuels.push(makeFuelUnit(1, { temp: 500 }));
-    state.fuels.push(makeFuelUnit(1, { temp: 500 }));
-    state.fuels.push(makeFuelUnit(1, { temp: 500 }));
-    state.fuels.push(makeFuelUnit(1, { temp: 25 }));
-    state.fuels.push(makeFuelUnit(1, { temp: 25 }));
     return {
         ...state,
-        heat: 300,
     };
 }
 const tick = (state) => {
@@ -134,11 +147,10 @@ const tick = (state) => {
 
     const newState = { ...state };
     newState.frameID += 1;
-    newState.oxygen += air.oxygen + (wind.oxygen || 0);
     newState.heat = 0;
     newState.fuels = [];
 
-    for (let i = 0; i < fuels.length; i++) {
+    for (let i = fuels.length - 1; i >= 0; i--) {
         const fuel = fuels[i];
         const {
             heatReq,
@@ -151,10 +163,10 @@ const tick = (state) => {
             temp,
         } = fuel;
 
-        if (value <= 0 && temp <= 0) continue;
+        if (value <= 0 && temp <= 0.01) continue;
         const newFuel = { ...fuel };
 
-        let transferredHeat = (heatBudget + temp) * heatTransferRate * heatUpRate * Math.sign(heatBudget - temp);
+        let transferredHeat = (heatBudget + temp) * heatTransferRate * heatUpRate * value / 100 * Math.sign(heatBudget - temp);
         heatBudget -= transferredHeat;
 
         newFuel.temp += transferredHeat;
@@ -171,12 +183,15 @@ const tick = (state) => {
 
             newState.oxygen -= oxygenReq * conversionPercent;
             newFuel.value -= fuelReq * conversionPercent;
-            newState.heat += givesHeatPerTick * conversionPercent;
+            heatBudget += givesHeatPerTick * conversionPercent;
         }
 
-        newState.fuels.push(newFuel);
+        newState.fuels.push({ ...newFuel, transferredHeat });
     }
-    newState.heat += heatBudget * 0.7 * easeOut(totalFuel / 2000);
+    newState.fuels.reverse();
+    newState.heat += heatBudget * 0.7 * easeOut(totalFuel / 1600);
+    newState.remainingOxygen = newState.oxygen;
+    newState.oxygen = air.oxygen + (wind.oxygen || 0);
 
     // console.log(`delta-heat: ${newState.heat - heat}`);
 
@@ -199,38 +214,54 @@ const tick = (state) => {
     return newState;
 };
 
+const addFuel = (fuelUnit) => {
+    state.fuels.push(fuelUnit);
+    _save.push(str1(fuelUnit));
+};
+
 const render = (state) => {
-    const variation = Math.random() * 0.3 + 0.7;
+    const variation = Math.random() * 0.2 + 0.8;
 
     const {
         flameSize,
         frameID,
         heat,
         oxygen,
+        remainingOxygen,
         fuels,
         air,
         wind,
     } = state;
-    const ww = heat / 500 * flameW * variation;
-    const hh = heat / 500 * flameH * variation;
+    const ww = heat / flameScale * flameW * variation;
+    const hh = heat / flameScale * flameH * variation;
 
     $flame.style.width = ww + 'px';
     $flame.style.height = hh + 'px';
 
     const totalFuel = fuels.map(f => f.value).reduce((acc, curr) => acc + curr, 0);
 
-    $wood.style.width = (woodW * totalFuel / 500) + 'px';
-    $wood.style.height = (woodH * totalFuel / 500) + 'px';
+    $wood.style.width = (woodW * totalFuel / woodScale) + 'px';
+    $wood.style.height = (woodH * totalFuel / woodScale) + 'px';
+
+    const fuelStr = ([...fuels]
+        // .filter(f => f.value > 0)
+        .reverse()
+        .map(fuelToString(4, fuels.length))
+        .join('\n')
+    );
+    const ashStr = fuels.filter(f => f.value === 0).map(f => f.temp).reduce((acc, curr) => acc + curr, 0);
 
     $debug.innerHTML = `<pre>\n` +
-        `frameID: ${frameID}\n` +
+        `frameID: ${frameID} (${frameID * frameSize / 1000}s)\n` +
         `flameSize: ${flameSize}\n` +
         `totalFuel: ${totalFuel}\n` +
         `heat: ${heat}\n` +
+        `ashHeat: ${ashStr}\n` +
         `oxygen: ${oxygen}\n` +
-        `fuels: \n${[...fuels].reverse().map(fuelStr(4)).join('\n')}\n` +
-        `air: \n${str(air)}\n` +
-        `wind: \n${str(wind)}\n` +
+        `remainingOxygen: ${remainingOxygen}\n` +
+        `fuels: \n${fuelStr}\n` +
+        `air: \n${str4(air)}\n` +
+        `wind: \n${str4(wind)}\n` +
         `Largest Frame Skip: ${largestFrameSkip}, Total Frame Skipped: ${framesSkipped}\n` +
         `</pre>`
         ;
@@ -241,13 +272,14 @@ const render = (state) => {
 const main = () => {
     lastTick = Date.now();
     state = init(state);
+    _save.push(str1(state));
     render(state);
 
     const a = () => {
         let i = 0;
         while (Date.now() - lastTick > frameSize / timeScale) {
             state = tick({ ...state });
-            lastTick += frameSize;
+            lastTick += frameSize / timeScale;
             i++;
         }
         if (i > 0) render(state);

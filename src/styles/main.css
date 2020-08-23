@@ -50,7 +50,7 @@ body {
   position: absolute;
   left: 50%;
   top: calc(70%);
-  transform: translate(-50%, -75%);
+  transform: translate(-50%, -80%);
   background-image: url(../a/kenney/flame.png);
   background-size: contain;
   background-repeat: no-repeat;
