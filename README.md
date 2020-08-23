@@ -1,4 +1,20 @@
-# js13k Webpack Starter
+# Adopt-a-Fire
+
+Set up and maintain a fire by balancing fuel, oxygen and heat
+
+## Play here
+
+https://vicksonzero.itch.io/adopt-a-fire
+
+## How to Play
+
+- Drag wood into fire to add fuel.
+- Balance the fire triangle (Fuel, Oxygen, Heat)
+- Currently max-oxygen is fixed. New versions will address this
+
+------------------------------------
+
+## js13k Webpack Starter
 
 ## What is it?
 
