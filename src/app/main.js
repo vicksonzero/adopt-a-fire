@@ -50,7 +50,7 @@ d.querySelector('button.btn-verbose').addEventListener('pointerup', () => {
 
 const bindButtons = () => {
     d.querySelector('button.start').addEventListener('pointerup', () => {
-        addSpark(800);
+        addSpark(700);
     });
     const $reset = d.querySelector('button.reset')
     if ($reset) $reset.addEventListener('pointerup', () => {
@@ -122,11 +122,11 @@ function makeFuelUnit(frameID, chunkSize, variation, override = {}) {
     return {
         frameID,
         heatReq: 300 * chunkSize,
-        heatUpRate: 0.015 / chunkSize,
+        heatUpRate: 0.02 / chunkSize,
         coolDownRate: 0.015 / chunkSize,
         oxygenReq: 2 * chunkSize,
         fuelReq: 0.08,
-        givesHeatPerTick: 56 * Math.pow(chunkSize, 1.1),
+        givesHeatPerTick: 60 * Math.pow(chunkSize, 1.1),
         value: Math.floor(300 * chunkSize * (1 + Math.random() * variation)),
         temp: 25,
         _transferredHeat: 0,
@@ -172,26 +172,17 @@ const init = (fromFrame) => {
         fuels: [
             makeFuelUnit(0, 0.2, 0.5, {
                 temp: 25,
-            }),
-            makeFuelUnit(0, 0.2, 0.5, {
-                temp: 25,
                 givesHeatPerTick: 60,
             }),
             makeFuelUnit(0, 0.2, 0.5, {
                 temp: 25,
                 givesHeatPerTick: 60,
             }),
-            makeFuelUnit(0, 0.2, 0.5, {
+            makeFuelUnit(0, 0.5, 0.5, {
                 temp: 25,
                 givesHeatPerTick: 60,
             }),
-            makeFuelUnit(0, 0.2, 0.5, {
-                temp: 25,
-            }),
-            makeFuelUnit(0, 0.2, 0.5, {
-                temp: 25,
-            }),
-            makeFuelUnit(0, 0.2, 0.5, {
+            makeFuelUnit(0, 0.5, 0.5, {
                 temp: 25,
             }),
         ],
