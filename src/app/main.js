@@ -50,7 +50,7 @@ d.querySelector('button.btn-verbose').addEventListener('pointerup', () => {
 
 const bindButtons = () => {
     d.querySelector('button.start').addEventListener('pointerup', () => {
-        addSpark(400);
+        addSpark(800);
     });
     const $reset = d.querySelector('button.reset')
     if ($reset) $reset.addEventListener('pointerup', () => {
@@ -89,6 +89,7 @@ const woodScale = 500;
 
         tr.append(...[...Array(inventoryWidth)].map(() => {
             const td = d.createElement('td');
+            td.style.height = `${(100 / inventoryHeight).toFixed(2)}%`; // HACK: fix firefox cannot display correctly
 
             const move = d.createElement('div');
             move.classList.add('move', 'drop');
@@ -121,11 +122,11 @@ function makeFuelUnit(frameID, chunkSize, variation, override = {}) {
     return {
         frameID,
         heatReq: 300 * chunkSize,
-        heatUpRate: 0.009 / chunkSize,
+        heatUpRate: 0.015 / chunkSize,
         coolDownRate: 0.015 / chunkSize,
         oxygenReq: 2 * chunkSize,
         fuelReq: 0.08,
-        givesHeatPerTick: 54 * Math.pow(chunkSize, 1 / 2),
+        givesHeatPerTick: 56 * Math.pow(chunkSize, 1.1),
         value: Math.floor(300 * chunkSize * (1 + Math.random() * variation)),
         temp: 25,
         _transferredHeat: 0,
@@ -174,12 +175,15 @@ const init = (fromFrame) => {
             }),
             makeFuelUnit(0, 0.2, 0.5, {
                 temp: 25,
+                givesHeatPerTick: 60,
             }),
             makeFuelUnit(0, 0.2, 0.5, {
                 temp: 25,
+                givesHeatPerTick: 60,
             }),
             makeFuelUnit(0, 0.2, 0.5, {
                 temp: 25,
+                givesHeatPerTick: 60,
             }),
             makeFuelUnit(0, 0.2, 0.5, {
                 temp: 25,
@@ -252,15 +256,16 @@ const tick = (state) => {
             const oxygenTaken = Math.min(newState.oxygen, oxygenReq * Math.pow(newFuel.temp / heatReq, 1 / 20));
             const oxygenTakenPercent = oxygenTaken / oxygenReq;
 
-            const fuelTaken = Math.min(value, fuelReq * oxygenTakenPercent);
+            const fuelTaken = Math.max(1, Math.min(value, fuelReq * oxygenTakenPercent));
             const fuelTakenPercent = fuelTaken / fuelReq;
 
-            const conversionPercent = Math.min(oxygenTakenPercent, fuelTakenPercent);
+            const conversionPercent = Math.max(0.0001, Math.min(oxygenTakenPercent, fuelTakenPercent));
 
             _oxygenGiven = oxygenReq * conversionPercent;
             newState.oxygen -= _oxygenGiven;
             newFuel.value -= fuelReq * conversionPercent;
             heatBudget += givesHeatPerTick * conversionPercent;
+            newFuel.value = Math.max(1, newFuel.value);
         }
         newState.oxygen *= state.oxygenDepreciation / Math.pow(newFuel.value, 1 / 10);
         const _oxygenChange = stepOxygen - newState.oxygen;
@@ -411,6 +416,12 @@ const main = () => {
             lastTick += frameSize / timeScale;
             i++;
         }
+        if (i > 0) console.log([...state.fuels]
+            // .filter(f => f.value > 0)
+            .reverse()
+            .map(fuelToString(4, state.fuels.length))
+            .join('\n')
+        );
         if (i > 0) render(state);
         if (i > 1) largestFrameSkip = Math.max(largestFrameSkip, i - 1);
         if (i > 1) framesSkipped += i - 1;
