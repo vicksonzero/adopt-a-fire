@@ -224,7 +224,7 @@ const fuelToString = (indent, fuelCount) => (fuel, i) => {
 const init = (fromFrame) => {
     const newState = {
         isRunning: false,
-        woodSpawnRate: 0.008,
+        woodSpawnRate: 0.01,
         maxTemp: 0,
         fromFrame: fromFrame,
         frameID: fromFrame,
@@ -429,16 +429,27 @@ const render = (state) => {
         const wood = d.querySelector(`.wood-plank[data-wood="${id}"]`);
         if (!wood) return;
 
-
+        const fireWoodHeight = 1.5;
         const placementOffset = mMin(1, (frameID - fuelUnitFrameID) / frameSize * 20) * 40 - 40;
         const transformPart = wood.style.transform
             .replace(/scale\([\d\.]+, [\d\.]+\)/, `scale(${scale}, ${scale})`)
-            .replace(/translate\(calc\(-50\% \+ [-\d\.]+px\), calc\(-50\% \+ [-\d\.]+px\)\)/, `translate(calc(-50% + ${2}px), calc(-50% + ${-richFuel.length / 2 + elevation * -3 + placementOffset}px))`)
+            .replace(/translate\(calc\(-50\% \+ [-\d\.]+px\), calc\(-50\% \+ [-\d\.]+px\)\)/, `translate(calc(-50% + ${2}px), calc(-50% + ${richFuel.length * fireWoodHeight + elevation * -3 + placementOffset}px))`)
             .split(/deg\) /)[0];
 
-        elevation += v;
+        elevation += v * fireWoodHeight;
+
+        const renderedRadius = (10
+            * state._radius
+            * mPow(fuels.length, 0.15)
+            * ((fuels.length - i) < 10 ? mPow(1.3, ((fuels.length - i) / 2))
+                : mPow(1.2, (10 / 2)) + (6 - 6 / mPow(fuels.length - i - 10, 1 / 10))
+            )
+        );
         // `scale(1,1) translate(calc(-50%), calc(-50%))  rotateZ(${woodAngle}deg) translate(${mr() * 5}px, ${state.radius / mPow(state.fuels.length, 3)}px)`;
-        wood.style.transform = `${transformPart}deg) translate(0px, ${mPow(mPow(fuels.length, 0.8) * state._radius, 2) * 1.8 / mPow(i, 1 / 2)}px)`;
+        wood.style.transform = `${transformPart}deg) translate(0px, ${renderedRadius}px)`;
+
+        // mPow(mPow(fuels.length, 0.8) * state._radius, 2) * 1.8 / mPow(i, 1 / 2)
+
         wood.style.backgroundColor = 'hsl(36°, 49%, 39%)';
         wood.style.opacity = `${.7 * mPow(mMax(1, value / 50), 2)}`;
         /** @type HTMLElement */
@@ -446,7 +457,7 @@ const render = (state) => {
         t.style.opacity = `${.5 * mPow(mMin(1, temp / 800), 2)}`;
         /** @type HTMLElement */
         const a = wood.querySelector('.ash');
-        a.style.opacity = `${.7 * mPow(1 - v, 1.5)}`;
+        a.style.opacity = `${.9 * mPow(1 - v, 1.5)}`;
     });
     // $wood.style.width = (woodW * totalFuel / woodScale) + 'px';
     // $wood.style.height = (woodH * totalFuel / woodScale) + 'px';
@@ -461,10 +472,17 @@ const render = (state) => {
     if (debugMode === 0) {
         $debug.style.display = 'none';
     }
+    const elapsedSecond = (frameID - fromFrame) * frameSize / 1000;
+    const timeString = (`` +
+        (elapsedSecond < 86400 ? '' : `${('' + Math.floor(elapsedSecond / 86400)).padStart(2, '0')}d`) +
+        (elapsedSecond < 3600 ? '' : `${('' + Math.floor((elapsedSecond % 86400) / 3600)).padStart(2, '0')}h`) +
+        (elapsedSecond < 60 ? '' : `${('' + Math.floor((elapsedSecond % 3600) / 60)).padStart(2, '0')}m`) +
+        `${(elapsedSecond % 60).toFixed(1).padStart(4, '0')}s`
+    );
     if (debugMode === 1) {
         $debug.style.display = 'block';
         $debug.innerHTML = `<pre>` +
-            `frameID: #${frameID} (${(frameID - fromFrame) * frameSize / 1000}s), timeScale: ${timeScale}\n` +
+            `frameID: #${frameID} (${timeString}), timeScale: ${timeScale}\n` +
             `totalFuel: ${totalFuel.toFixed(2)}\n` +
             `heat: ${heat.toFixed(2)} (-${(1 - _heatLoss).toFixed(2)})\n` +
             `oxygen: ${_remainingOxygen.toFixed(2)}/${oxygen.toFixed(2)}\n` +
@@ -476,7 +494,7 @@ const render = (state) => {
     if (debugMode === 2) {
         $debug.style.display = 'block';
         $debug.innerHTML = `<pre>` +
-            `frameID: #${frameID} (${(frameID - fromFrame) * frameSize / 1000}s), timeScale: ${timeScale}\n` +
+            `frameID: #${frameID} (${timeString}), timeScale: ${timeScale}\n` +
             `totalFuel: ${totalFuel.toFixed(2)} (${richFuel.length} rich)\n` +
             `heat: ${heat.toFixed(2)} (-${(1 - _heatLoss).toFixed(2)})\n` +
             `ashHeat: ${ashStr.toFixed(2)}\n` +
