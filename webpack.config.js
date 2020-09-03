@@ -15,14 +15,28 @@ module.exports = {
         use: [
           MiniCssExtractPlugin.loader,
           {
-            loader: 'css-loader'
-          }
+            loader: 'css-loader',
+          },
         ]
       },
       {
         test: /\.(jpe?g|png|ttf|eot|svg|woff(2)?)(\?[a-z0-9=&.]+)?$/,
         use: 'base64-inline-loader?limit=1000&name=[name].[ext]'
-    }
+      },
+      {
+        test: /\.js$/,
+        enforce: 'pre',
+        exclude: /(node_modules|bower_components|\.spec\.js)/,
+        use: [
+          {
+            loader: 'webpack-strip-block',
+            options: {
+              start: '#IfDev',
+              end: '#EndIfDev'
+            }
+          },
+        ]
+      }
     ]
   },
   plugins: [
