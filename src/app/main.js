@@ -10,58 +10,32 @@ const d = document;
 const str1 = a => JSON.stringify(a);
 const str4 = a => JSON.stringify(a, null, 4);
 const par = JSON.parse;
-
+const mr = Math.random;
+const mMax = Math.max;
+const mMin = Math.min;
+const mPow = Math.pow;
 
 const frameSize = 100; // 10 fps
-const timeScale = 1;
+let timeScale = 1;
 
-let lastTick = 0;
-let largestFrameSkip = 0;
-let framesSkipped = 0;
 const _save = [];
-let debugMode = 0; // 0=off, 1=debug, 2=verbose
 
 const gameOverTemp = 100;
 
-let state = {};
-
-let isDragging = false;
-dragAndDrop({
-    // return false to to skip DropResponse
-    onDrop(item, dropTarget) {
-        isDragging = false;
-        if (dropTarget.classList.contains("fire")) {
-            addFuel(makeFuelUnit(state.frameID, 1, 0, { temp: 25 }));
-            return false;
-        }
-
-        return true;
-    },
-    onDrag() {
-        isDragging = true;
-    }
-});
-d.querySelector('button.btn-debug').addEventListener('pointerup', () => {
-    debugMode = debugMode !== 1 ? 1 : 0;
-});
-d.querySelector('button.btn-verbose').addEventListener('pointerup', () => {
-    debugMode = debugMode !== 2 ? 2 : 0;
-});
-
-const bindButtons = () => {
-    d.querySelector('button.start').addEventListener('pointerup', () => {
-        addSpark(700);
-    });
-    const $reset = d.querySelector('button.reset')
-    if ($reset) $reset.addEventListener('pointerup', () => {
-        console.log('reset', state.frameID);
-        init(state.frameID);
-    });
-};
-bindButtons();
+// #IfDev
+console.log('Dev');
+// #EndIfDev
 
 const inventoryWidth = 5;
 const inventoryHeight = 4;
+const woodAngleAdvanceMin = 360 / 7;
+const woodAngleAdvanceVariation = 360 / 4 - woodAngleAdvanceMin;
+
+let woodAngle = woodAngleAdvanceMin + mr() * woodAngleAdvanceVariation;
+let lastTick = 0;
+let largestFrameSkip = 0;
+let framesSkipped = 0;
+let debugMode = 0; // 0=off, 1=debug, 2=verbose
 
 /** @type HTMLElement */
 const $debug = d.querySelector('.debug');
@@ -93,7 +67,7 @@ const woodScale = 500;
 
             const move = d.createElement('div');
             move.classList.add('move', 'drop');
-            if (Math.random() > 0.5) {
+            if (mr() > 0.5) {
                 const wood = d.createElement('div');
                 wood.classList.add('drag', 'wood');
                 move.append(wood);
@@ -105,9 +79,92 @@ const woodScale = 500;
     })))
 );
 
-function easeOut(x) {
-    return 1 - Math.pow(1 - x, 6);
+
+let state = {};
+
+let isDragging = false;
+dragAndDrop({
+    // return false to to skip DropResponse
+    onDrop(item, dropTarget) {
+        isDragging = false;
+        if (dropTarget.classList.contains("fire")) {
+            addFuel(makeFuelUnit(state, 1, 0, { temp: 25 }));
+            return false;
+        }
+
+        return true;
+    },
+    onDrag() {
+        isDragging = true;
+    }
+});
+
+d.querySelector('button.btn-debug').addEventListener('pointerup', () => {
+    debugMode = debugMode !== 1 ? 1 : 0;
+});
+d.querySelector('button.btn-verbose').addEventListener('pointerup', () => {
+    debugMode = debugMode !== 2 ? 2 : 0;
+});
+
+{
+    let isDown = false;
+    let startX;
+    let startY;
+    let startRadius;
+    d.querySelector('.fire').addEventListener('pointerdown', (e) => {
+        [startX, startY] = extractPointers(e);
+        isDown = true;
+        startRadius = state.radius;
+    });
+    d.querySelector('.fire').addEventListener('pointermove', (/** @type PointerEvent*/e) => {
+        if (isDown) {
+            const [pointerX, pointerY] = extractPointers(e);
+            state._radius = mMin(1, mMax(0, startRadius + (pointerX - startX) / window.innerWidth));
+            console.log(state._radius);
+        }
+    });
+    d.querySelector('.fire').addEventListener('pointerup', (e) => {
+        if (isDown) {
+            isDown = false;
+            const [pointerX, pointerY] = extractPointers(e);
+
+            state._radius = mMin(1, mMax(0, startRadius + (pointerX - startX) / window.innerWidth));
+            changeRadius(state._radius);
+        }
+    });
 }
+
+const bindButtons = () => {
+    d.querySelector('button.start').addEventListener('pointerup', () => {
+        addSpark(400);
+    });
+    const $reset = d.querySelector('button.reset');
+    if ($reset) $reset.addEventListener('pointerup', () => {
+        console.log('reset', state.frameID);
+        init(state.frameID);
+    });
+};
+bindButtons();
+
+function easeOut(x) {
+    return 1 - mPow(1 - x, 6);
+}
+
+const extractPointers = (e) => [
+    e.touches ? e.touches[0].pageX : e.pageX,
+    e.touches ? e.touches[0].pageY : e.pageY
+];
+
+const dist = (dx, dy) => Math.sqrt(dx * dx + dy * dy);
+
+const createElementFromHTML = (htmlString) => {
+    var div = d.createElement('div');
+    div.innerHTML = htmlString;
+    return div.firstChild;
+};
+
+const plankCSS = ({ valueStart, id }) => `<div class="wood-plank" data-wood="${id}" style="width: ${10 / 40 * valueStart}px; height: ${mMax(1, 2 / 40 * valueStart)}px;"><div class="temp"></div><div class="ash"></div></div>`;
+// `transform: scale(1,1) translate(calc(-50%), calc(-50%))  rotateZ(0) translate(${1}, ${1}px);`,
 
 // @ts-ignore
 window.save = () => {
@@ -117,17 +174,25 @@ window.save = () => {
 window.state = () => {
     console.log(state);
 };
+// @ts-ignore
+window.timeScale = (_timeScale) => {
+    timeScale = _timeScale;
+}
 
-function makeFuelUnit(frameID, chunkSize, variation, override = {}) {
+function makeFuelUnit(state, chunkSize, variation, override = {}) {
+    state.fuelID++;
+    const value = Math.floor(300 * chunkSize * (1 + mr() * variation));
     return {
-        frameID,
+        frameID: state.frameID,
+        id: state.fuelID,
+        valueStart: value,
         heatReq: 300 * chunkSize,
         heatUpRate: 0.02 / chunkSize,
-        coolDownRate: 0.015 / chunkSize,
-        oxygenReq: 2 * chunkSize,
-        fuelReq: 0.08,
-        givesHeatPerTick: 60 * Math.pow(chunkSize, 1.1),
-        value: Math.floor(300 * chunkSize * (1 + Math.random() * variation)),
+        coolDownRate: 0.010 / chunkSize,
+        oxygenReq: 4 * chunkSize,
+        fuelReq: 0.2,
+        givesHeatPerTick: 55 * mPow(chunkSize, 1.1),
+        value,
         temp: 25,
         _transferredHeat: 0,
         _heatChange: 0,
@@ -159,32 +224,20 @@ const fuelToString = (indent, fuelCount) => (fuel, i) => {
 const init = (fromFrame) => {
     const newState = {
         isRunning: false,
-        woodSpawnRate: 0.01,
+        woodSpawnRate: 0.008,
         maxTemp: 0,
         fromFrame: fromFrame,
         frameID: fromFrame,
+        radius: 0.5,
+        _radius: 0.5,
         heat: 25,
         heatTransferRate: 0.7,
         oxygen: 100,
         oxygenDepreciation: 0.92, // smaller means less gas remains
         _remainingOxygen: 0,
         _largestFlame: 0,
+        fuelID: 0,
         fuels: [
-            makeFuelUnit(0, 0.2, 0.5, {
-                temp: 25,
-                givesHeatPerTick: 60,
-            }),
-            makeFuelUnit(0, 0.2, 0.5, {
-                temp: 25,
-                givesHeatPerTick: 60,
-            }),
-            makeFuelUnit(0, 0.5, 0.5, {
-                temp: 25,
-                givesHeatPerTick: 60,
-            }),
-            makeFuelUnit(0, 0.5, 0.5, {
-                temp: 25,
-            }),
         ],
         air: {
             heat: -5,
@@ -195,12 +248,29 @@ const init = (fromFrame) => {
             //     heat: -40,
         },
     };
+
     state = newState;
+    $wood.innerHTML = '';
+    addFuel(makeFuelUnit(state, 0.2, 0.5, {
+        temp: 25,
+        givesHeatPerTick: 60,
+    }));
+    addFuel(makeFuelUnit(state, 0.2, 0.5, {
+        temp: 25,
+        givesHeatPerTick: 60,
+    }));
+    addFuel(makeFuelUnit(state, 0.5, 0.5, {
+        temp: 25,
+        givesHeatPerTick: 60,
+    }));
+    addFuel(makeFuelUnit(state, 0.5, 0.5, {
+        temp: 25,
+    }));
     _save.push(str1(state));
 };
 const tick = (state) => {
     const { isRunning, frameID, fuels, heat, oxygen, heatTransferRate, air, wind, woodSpawnRate } = state;
-    let heatBudget = Math.max(25, heat + air.heat + (wind.heat || 0));
+    let heatBudget = mMax(25, heat + air.heat + (wind.heat || 0));
 
     const totalFuel = fuels.map(f => f.value).reduce((acc, curr) => acc + curr, 0);
 
@@ -209,7 +279,7 @@ const tick = (state) => {
     newState.heat = 0;
     newState.fuels = [];
 
-    const maxTemp = [...newState.fuels.map(f => f.temp), heat].reduce((a, b) => Math.max(a, b), 0);
+    const maxTemp = [...newState.fuels.map(f => f.temp), heat].reduce((a, b) => mMax(a, b), 0);
     newState.maxTemp = maxTemp;
     newState.isRunning = (maxTemp >= gameOverTemp);
     if (isRunning && !newState.isRunning) {
@@ -241,41 +311,43 @@ const tick = (state) => {
         heatBudget -= _transferredHeat;
         let _oxygenGiven = 0;
         newFuel.temp += _transferredHeat;
-        if (newFuel.value <= 50) newFuel.temp *= 1 - coolDownRate;
+        if (newFuel.value <= 50) newFuel.temp *= (1 - coolDownRate * mPow(0.95, i));
 
         if (newFuel.temp >= heatReq) {
-            const oxygenTaken = Math.min(newState.oxygen, oxygenReq * Math.pow(newFuel.temp / heatReq, 1 / 20));
+            const oxygenTaken = mMin(newState.oxygen * mPow(state.radius, 0.5), oxygenReq * mPow(newFuel.temp / heatReq, 1 / 20));
             const oxygenTakenPercent = oxygenTaken / oxygenReq;
 
-            const fuelTaken = Math.max(1, Math.min(value, fuelReq * oxygenTakenPercent));
+            const fuelTaken = mMax(1, mMin(value, fuelReq * oxygenTakenPercent));
             const fuelTakenPercent = fuelTaken / fuelReq;
 
-            const conversionPercent = Math.max(0.0001, Math.min(oxygenTakenPercent, fuelTakenPercent));
+            const conversionPercent = mMax(0.0001, mMin(oxygenTakenPercent, fuelTakenPercent));
 
             _oxygenGiven = oxygenReq * conversionPercent;
-            newState.oxygen -= _oxygenGiven;
-            newFuel.value -= fuelReq * conversionPercent;
+            // newState.oxygen -= _oxygenGiven;
+            newFuel.value -= fuelReq * conversionPercent * 2;
             heatBudget += givesHeatPerTick * conversionPercent;
-            newFuel.value = Math.max(1, newFuel.value);
+            newFuel.value = mMax(0.001, newFuel.value);
         }
-        newState.oxygen *= state.oxygenDepreciation / Math.pow(newFuel.value, 1 / 10);
+        newState.oxygen *= mPow(state.radius, 1 / 2);
+        // newState.oxygen *= state.oxygenDepreciation / mPow(state.radius, 1 / 6);
         const _oxygenChange = stepOxygen - newState.oxygen;
         const _heatChange = newFuel.temp - temp;
 
         newState.fuels.push({ ...newFuel, _transferredHeat, _heatChange, _oxygenGiven, _oxygenChange });
     }
     newState.fuels.reverse();
-    newState.heat += heatBudget * 0.8 * easeOut(totalFuel / 1600);
+    newState._heatLoss = mPow(1.1 - state.radius, 1 / 8) * mMin(1, mPow(newState.fuels.length / 4.1, 4));
+    newState.heat += heatBudget * newState._heatLoss;
     newState._remainingOxygen = newState.oxygen;
-    newState.oxygen = air.oxygen + (wind.oxygen || 0);
-    newState._largestFlame = Math.max(newState._largestFlame, newState.heat);
+    newState.oxygen = air.oxygen / 30 * mPow(state.radius, 1 / 2) + (wind.oxygen || 0);
+    newState._largestFlame = mMax(newState._largestFlame, newState.heat);
 
     // console.log(`delta-heat: ${newState.heat - heat}`);
 
 
-    if (!isDragging && Math.random() <= woodSpawnRate) {
-        const ii = Math.floor(Math.random() * inventoryHeight);
-        const jj = Math.floor(Math.random() * inventoryWidth);
+    if (!isDragging && mr() <= woodSpawnRate) {
+        const ii = Math.floor(mr() * inventoryHeight);
+        const jj = Math.floor(mr() * inventoryWidth);
 
         /** @type HTMLElement */
         const $cell = d.querySelector(`.inventory-table>tr:nth-child(${ii + 1})>td:nth-child(${jj + 1})>.move.drop`);
@@ -292,6 +364,11 @@ const tick = (state) => {
 
 const addFuel = (fuelUnit) => {
     state.fuels.push(fuelUnit);
+    /** @type any */
+    let wood;
+    $wood.appendChild(wood = createElementFromHTML(plankCSS(fuelUnit)));
+    wood.style.transform = `translate(calc(-50% + 1px), calc(-50% + 1px)) scale(1, 1) rotateZ(${woodAngle}deg) translate(${mr() * 5}px, ${state.radius / mPow(state.fuels.length, 3)}px)`;
+    woodAngle += woodAngleAdvanceMin + mr() * woodAngleAdvanceVariation;
     _save.push(str1(fuelUnit));
 };
 
@@ -300,12 +377,22 @@ const addSpark = (heat) => {
     _save.push(str1(state));
 };
 
+const changeRadius = (radius) => {
+    state.radius = mMax(0, mMin(1, radius));
+    _save.push(str1(state));
+};
+// @ts-ignore
+window.changeRadius = changeRadius;
+
 const render = (state) => {
-    const variation = Math.random() * 0.2 + 0.8;
+    const variation = mr() * 0.2 + 0.8;
 
     const {
         frameID,
+        fromFrame,
         heat,
+        _heatLoss,
+        radius,
         oxygen,
         _remainingOxygen,
         fuels,
@@ -327,9 +414,42 @@ const render = (state) => {
     $flame.style.height = hh + 'px';
 
     const totalFuel = fuels.map(f => f.value).reduce((acc, curr) => acc + curr, 0);
+    const richFuel = fuels.filter(f => f.value > 10);
+    let elevation = 0
 
-    $wood.style.width = (woodW * totalFuel / woodScale) + 'px';
-    $wood.style.height = (woodH * totalFuel / woodScale) + 'px';
+    fuels.forEach((fuelUnit, i) => {
+        /** @type any */
+
+        const { valueStart, value, temp, id, frameID: fuelUnitFrameID } = fuelUnit;
+        const v = value / valueStart;
+        const scale = mPow(v, 1.6) * 0.3 + 0.7;
+        // const scale = 1;
+
+        /** @type HTMLElement */
+        const wood = d.querySelector(`.wood-plank[data-wood="${id}"]`);
+        if (!wood) return;
+
+
+        const placementOffset = mMin(1, (frameID - fuelUnitFrameID) / frameSize * 20) * 40 - 40;
+        const transformPart = wood.style.transform
+            .replace(/scale\([\d\.]+, [\d\.]+\)/, `scale(${scale}, ${scale})`)
+            .replace(/translate\(calc\(-50\% \+ [-\d\.]+px\), calc\(-50\% \+ [-\d\.]+px\)\)/, `translate(calc(-50% + ${2}px), calc(-50% + ${-richFuel.length / 2 + elevation * -3 + placementOffset}px))`)
+            .split(/deg\) /)[0];
+
+        elevation += v;
+        // `scale(1,1) translate(calc(-50%), calc(-50%))  rotateZ(${woodAngle}deg) translate(${mr() * 5}px, ${state.radius / mPow(state.fuels.length, 3)}px)`;
+        wood.style.transform = `${transformPart}deg) translate(0px, ${mPow(mPow(fuels.length, 0.8) * state._radius, 2) * 1.8 / mPow(i, 1 / 2)}px)`;
+        wood.style.backgroundColor = 'hsl(36°, 49%, 39%)';
+        wood.style.opacity = `${.7 * mPow(mMax(1, value / 50), 2)}`;
+        /** @type HTMLElement */
+        const t = wood.querySelector('.temp');
+        t.style.opacity = `${.5 * mPow(mMin(1, temp / 800), 2)}`;
+        /** @type HTMLElement */
+        const a = wood.querySelector('.ash');
+        a.style.opacity = `${.7 * mPow(1 - v, 1.5)}`;
+    });
+    // $wood.style.width = (woodW * totalFuel / woodScale) + 'px';
+    // $wood.style.height = (woodH * totalFuel / woodScale) + 'px';
 
     const fuelStr = ([...fuels]
         // .filter(f => f.value > 0)
@@ -344,9 +464,9 @@ const render = (state) => {
     if (debugMode === 1) {
         $debug.style.display = 'block';
         $debug.innerHTML = `<pre>` +
-            `frameID: #${frameID} (${frameID * frameSize / 1000}s), timeScale: ${timeScale}\n` +
+            `frameID: #${frameID} (${(frameID - fromFrame) * frameSize / 1000}s), timeScale: ${timeScale}\n` +
             `totalFuel: ${totalFuel.toFixed(2)}\n` +
-            `heat: ${heat.toFixed(2)}\n` +
+            `heat: ${heat.toFixed(2)} (-${(1 - _heatLoss).toFixed(2)})\n` +
             `oxygen: ${_remainingOxygen.toFixed(2)}/${oxygen.toFixed(2)}\n` +
             `_largestFrameSkip: ${largestFrameSkip}\n_totalFrameSkipped: ${framesSkipped}\n` +
             `</pre>`
@@ -355,21 +475,22 @@ const render = (state) => {
 
     if (debugMode === 2) {
         $debug.style.display = 'block';
-        $debug.innerHTML = [`<pre>`,
-            `frameID: #${frameID} (${frameID * frameSize / 1000}s), timeScale: ${timeScale}\n`,
-            `totalFuel: ${totalFuel.toFixed(2)}\n`,
-            `heat: ${heat.toFixed(2)}\n`,
-            `ashHeat: ${ashStr.toFixed(2)}\n`,
-            `oxygen: ${_remainingOxygen.toFixed(2)}/${oxygen.toFixed(2)}\n`,
-            `fuels:   value     temp   _tHeat  _dHeat     _o2    _dO2\n`,
-            `${fuelStr}\n`,
-            `air: \n${str4(air)}\n`,
-            `wind: \n${str4(wind)}\n`,
-            `_largestFrameSkip: ${largestFrameSkip}\n`,
-            `_totalFrameSkipped: ${framesSkipped}\n`,
-            `_largestFlame: ${_largestFlame}\n`,
+        $debug.innerHTML = `<pre>` +
+            `frameID: #${frameID} (${(frameID - fromFrame) * frameSize / 1000}s), timeScale: ${timeScale}\n` +
+            `totalFuel: ${totalFuel.toFixed(2)} (${richFuel.length} rich)\n` +
+            `heat: ${heat.toFixed(2)} (-${(1 - _heatLoss).toFixed(2)})\n` +
+            `ashHeat: ${ashStr.toFixed(2)}\n` +
+            `radius: ${radius.toFixed(2)}\n` +
+            `oxygen: ${_remainingOxygen.toFixed(2)}/${oxygen.toFixed(2)}\n` +
+            `fuels:   value     temp   _tHeat  _dHeat     _o2    _dO2\n` +
+            `${fuelStr}\n` +
+            `air: \n${str4(air)}\n` +
+            `wind: \n${str4(wind)}\n` +
+            `_largestFrameSkip: ${largestFrameSkip}\n` +
+            `_totalFrameSkipped: ${framesSkipped}\n` +
+            `_largestFlame: ${_largestFlame}\n` +
             `</pre>`
-        ].join('\n');
+            ;
     }
     // $result.innerHTML = `` +
     //     `<h2>Game Over</h2>` +
@@ -407,14 +528,14 @@ const main = () => {
             lastTick += frameSize / timeScale;
             i++;
         }
-        if (i > 0) console.log([...state.fuels]
-            // .filter(f => f.value > 0)
-            .reverse()
-            .map(fuelToString(4, state.fuels.length))
-            .join('\n')
-        );
+        // if (i > 0) console.log([...state.fuels]
+        //     // .filter(f => f.value > 0)
+        //     .reverse()
+        //     .map(fuelToString(4, state.fuels.length))
+        //     .join('\n')
+        // );
         if (i > 0) render(state);
-        if (i > 1) largestFrameSkip = Math.max(largestFrameSkip, i - 1);
+        if (i > 1) largestFrameSkip = mMax(largestFrameSkip, i - 1);
         if (i > 1) framesSkipped += i - 1;
 
         requestAnimationFrame(a);
