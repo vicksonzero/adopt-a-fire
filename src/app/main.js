@@ -14,6 +14,7 @@ const mr = Math.random;
 const mMax = Math.max;
 const mMin = Math.min;
 const mPow = Math.pow;
+const mFloor = Math.floor;
 
 const frameSize = 100; // 10 fps
 let timeScale = 1;
@@ -181,7 +182,7 @@ window.timeScale = (_timeScale) => {
 
 function makeFuelUnit(state, chunkSize, variation, override = {}) {
     state.fuelID++;
-    const value = Math.floor(300 * chunkSize * (1 + mr() * variation));
+    const value = mFloor(300 * chunkSize * (1 + mr() * variation));
     return {
         frameID: state.frameID,
         id: state.fuelID,
@@ -328,7 +329,7 @@ const tick = (state) => {
             heatBudget += givesHeatPerTick * conversionPercent;
             newFuel.value = mMax(0.001, newFuel.value);
         }
-        newState.oxygen *= mPow(state.radius, 1 / 2);
+        newState.oxygen *= 0.98 * mPow(state.radius, 1 / 2);
         // newState.oxygen *= state.oxygenDepreciation / mPow(state.radius, 1 / 6);
         const _oxygenChange = stepOxygen - newState.oxygen;
         const _heatChange = newFuel.temp - temp;
@@ -346,8 +347,8 @@ const tick = (state) => {
 
 
     if (!isDragging && mr() <= woodSpawnRate) {
-        const ii = Math.floor(mr() * inventoryHeight);
-        const jj = Math.floor(mr() * inventoryWidth);
+        const ii = mFloor(mr() * inventoryHeight);
+        const jj = mFloor(mr() * inventoryWidth);
 
         /** @type HTMLElement */
         const $cell = d.querySelector(`.inventory-table>tr:nth-child(${ii + 1})>td:nth-child(${jj + 1})>.move.drop`);
@@ -474,9 +475,9 @@ const render = (state) => {
     }
     const elapsedSecond = (frameID - fromFrame) * frameSize / 1000;
     const timeString = (`` +
-        (elapsedSecond < 86400 ? '' : `${('' + Math.floor(elapsedSecond / 86400)).padStart(2, '0')}d`) +
-        (elapsedSecond < 3600 ? '' : `${('' + Math.floor((elapsedSecond % 86400) / 3600)).padStart(2, '0')}h`) +
-        (elapsedSecond < 60 ? '' : `${('' + Math.floor((elapsedSecond % 3600) / 60)).padStart(2, '0')}m`) +
+        (elapsedSecond < 86400 ? '' : `${('' + mFloor(elapsedSecond / 86400)).padStart(2, '0')}d`) +
+        (elapsedSecond < 3600 ? '' : `${('' + mFloor((elapsedSecond % 86400) / 3600)).padStart(2, '0')}h`) +
+        (elapsedSecond < 60 ? '' : `${('' + mFloor((elapsedSecond % 3600) / 60)).padStart(2, '0')}m`) +
         `${(elapsedSecond % 60).toFixed(1).padStart(4, '0')}s`
     );
     if (debugMode === 1) {
