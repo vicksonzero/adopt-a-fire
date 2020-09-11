@@ -39,11 +39,11 @@ exports.dragAndDrop = delegates => {
 
 
     const pointerdown = e => {
+        // console.log('e', e);
         e.preventDefault();
         isDragging = 1;
         if (dragContainer) {
             dragContainer.remove();
-            dragContainer = null;
             // isMove
             dragOrigin.style.visibility = "visible";
         }
@@ -55,6 +55,7 @@ exports.dragAndDrop = delegates => {
                 e.touches[0].pageY
             );
         } else {
+            if (e.button !== 0) return;
             dragOrigin = e.target;
         }
 
@@ -104,8 +105,8 @@ exports.dragAndDrop = delegates => {
     }
 
     const pointerup = e => {
+        e.preventDefault();
         if (dragContainer) {
-            e.preventDefault();
             isDragging = 0;
             if (e.touches) {
                 dropTarget = d.elementFromPoint(
@@ -113,6 +114,7 @@ exports.dragAndDrop = delegates => {
                     dragY
                 );
             } else {
+                if (e.button !== 0) return;
                 dropTarget = e.target;
             }
 
@@ -140,11 +142,12 @@ exports.dragAndDrop = delegates => {
             dragOrigin.style.visibility = "visible";
         }
     }
+    window.addEventListener("mouseup", pointerup);
+    window.addEventListener("touchend", pointerup, { passive: false });
+    // window.addEventListener("mouseout", pointerup);
+
     addEventListener("mousedown", pointerdown);
     addEventListener("touchstart", pointerdown, { passive: false });
     addEventListener("mousemove", pointermove);
     addEventListener("touchmove", pointermove, { passive: false });
-    window.addEventListener("mouseup", pointerup);
-    window.addEventListener("touchend", pointerup, { passive: false });
-    window.addEventListener("mouseout", pointerup);
 };

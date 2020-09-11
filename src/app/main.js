@@ -51,6 +51,10 @@ const $resultBody = d.querySelector('.result div.body');
 const $wood = d.querySelector('.fire-wood');
 /** @type HTMLElement */
 const $flame = d.querySelector('.fire-flame');
+/** @type HTMLElement */
+const $trees = d.querySelector('.trees');
+/** @type SVGElement */
+const $progressCircle = d.querySelector('circle');
 
 const flameW = $flame.offsetWidth;
 const flameH = $flame.offsetHeight;
@@ -70,11 +74,8 @@ const woodScale = 500;
             const move = d.createElement('div');
             move.classList.add('move', 'drop');
             if (mr() > 0.5) {
-                const wood = d.createElement('div');
-                wood.classList.add('drag', 'wood');
-                wood.setAttribute('data-size', '300');
-                wood.style.backgroundSize = Math.random() * 50 + 80 + 'vmin';
-                move.append(wood);
+                var wood = collectWood(move, mFloor(mr() * 300) + 300);
+                wood.classList.add('drag');
             }
             td.append(move);
             return td;
@@ -95,7 +96,8 @@ dragAndDrop({
     onDrop(e, maxDist, item, dragOrigin, dropTarget) {
         isDragging = false;
         if (dropTarget.classList.contains("fire")) {
-            addFuel(makeFuelUnit(state, 1, 0, { temp: 25 }));
+            const chunkSize = Number(item.getAttribute('data-size'));
+            addFuel(makeFuelUnit(state, chunkSize / 300, 0, { temp: 25 }));
             return false;
         }
 
@@ -115,6 +117,41 @@ dragAndDrop({
             } else if (item.classList.contains('wood') && maxDist < 10) {
                 console.log('split wood');
                 const cells = getAvailableCells();
+
+                if (cells.length > 0) {
+                    const cell = cells[mFloor(mr() * cells.length)];
+
+                    const oldWood = dragOrigin;
+                    const origSize = Number(oldWood.getAttribute('data-size'));
+                    const oldChunkSize = mFloor(origSize * (mr() * 0.4 + 0.3));
+                    const newChunkSize = origSize - oldChunkSize;
+                    const newWood = collectWood(
+                        cell,
+                        newChunkSize,
+                    );
+                    oldWood.classList.remove('drag');
+                    newWood.style.visibility = 'hidden';
+
+                    const circle = addProgressCircle(dragOrigin.parentNode);
+                    // progressCircle.classList.add('animate');
+                    // progressCircle.style.visibility = 'visible';
+                    setTimeout(() => {
+                        oldWood.classList.add('drag');
+                        newWood.classList.add('drag');
+                        newWood.style.visibility = 'visible';
+
+
+                        oldWood.setAttribute('data-size', `` + oldChunkSize);
+                        oldWood.style.backgroundSize = (oldChunkSize / 500 * 100) + 'vmin';
+
+                        circle.remove();
+
+                        // progressCircle.style.visibility = 'hidden';
+                        // progressCircle.classList.remove('animate');
+                    }, 4000);
+                }
+                dragOrigin.m = false;
+                return false;
             } else {
                 console.log('drag into same cell');
             }
@@ -132,10 +169,31 @@ d.querySelector('button.btn-verbose').addEventListener('pointerup', () => {
 });
 
 const clickTree = () => {
-    console.log('chop wood');
+    if ($progressCircle.style.visibility === 'visible') return;
+    const cells = getAvailableCells();
+    console.log('chop wood', cells);
+    if (cells.length <= 0) return;
+
+    const cell = cells[mFloor(mr() * cells.length)];
+
+    const newWood = collectWood(
+        cell,
+        mFloor(mr() * 500) + 300,
+    );
+    newWood.style.visibility = 'hidden';
+    $progressCircle.classList.add('animate');
+    $progressCircle.parentNode.parentElement.style.visibility = 'visible';
+    setTimeout(() => {
+        newWood.classList.add('drag');
+        newWood.style.visibility = 'visible';
+        $progressCircle.parentNode.parentElement.style.visibility = 'hidden';
+        $progressCircle.classList.remove('animate');
+    }, 4000);
 }
 d.querySelector('.trees').addEventListener('click', clickTree);
 d.querySelector('.trees').addEventListener('touchend', clickTree);
+
+
 
 {
     let isDown = false;
@@ -397,9 +455,23 @@ const getAvailableCells = () => {
     return [...cells];
 };
 
-const collectWood = (cell) => {
+function collectWood(cell, chunkSize) {
+    const wood = d.createElement('div');
+    wood.classList.add('wood');
+    wood.setAttribute('data-size', `` + chunkSize);
+    wood.style.backgroundSize = (chunkSize / 500 * 100) + 'vmin';
+    cell.append(wood);
 
+    return wood;
 };
+
+const addProgressCircle = (cell) => {
+    const circle = cell.appendChild($progressCircle.parentNode.parentNode.cloneNode(true));
+    circle.querySelector('circle').classList.add('animate');
+    circle.querySelector('svg').style.visibility = 'visible';
+    circle.style.top = '50%';
+    return circle;
+}
 
 const addFuel = (fuelUnit) => {
     state.fuels.push(fuelUnit);
