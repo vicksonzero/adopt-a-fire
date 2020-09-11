@@ -30,12 +30,12 @@ body {
   position: absolute;
 }
 .bg-grass {
-  width: 140%;
+  width: 170%;
   height: 50%;
   position: absolute;
   background-color: rgb(123, 222, 14);
   position: absolute;
-  left: 50%;
+  left: 65%;
   bottom: 0;
   transform: translateX(-50%);
   border-radius: 50% 50% 0 0;
@@ -50,7 +50,7 @@ body {
   height: 25vh;
   position: absolute;
   right: 5%;
-  top: 20%;
+  top: 15%;
 }
 .tree-trunk {
   background-color: rgb(106, 54, 0);
@@ -72,6 +72,30 @@ body {
   transform: translateX(-50%);
   border-radius: 50%;
   pointer-events: none;
+}
+.tree-progress {
+  position: absolute;
+  left: 50%;
+  top: 65%;
+  transform: translate(-50%, -50%);
+}
+circle {
+  fill: none;
+  stroke: white;
+  stroke-width: 8;
+  stroke-dasharray: 300;
+  stroke-dashoffset: 0;
+}
+circle.animate {
+  animation: rotate 10s linear;
+}
+@keyframes rotate {
+  from {
+    stroke-dashoffset: 300;
+  }
+  to {
+    stroke-dashoffset: 0;
+  }
 }
 h1 {
   font-size: 16px;
@@ -187,7 +211,8 @@ h1.title {
   background-color: rgb(79 232 0);
 }
 .inventory td div.move.drop {
-  background-color: rgb(238, 220, 197);
+  background-color: rgb(238, 215, 183);
+  position: relative;
 }
 .inventory td div.move.drop:empty {
   background-color: rgb(250, 235, 215);
