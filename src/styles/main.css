@@ -21,9 +21,57 @@ body {
   flex: 1 0 50%;
   position: relative;
 }
+
+.bg {
+  width: 100%;
+  height: 100%;
+  background-color: #d0e0ff;
+  pointer-events: none;
+  position: absolute;
+}
+.bg-grass {
+  width: 140%;
+  height: 50%;
+  position: absolute;
+  background-color: rgb(123, 222, 14);
+  position: absolute;
+  left: 50%;
+  bottom: 0;
+  transform: translateX(-50%);
+  border-radius: 50% 50% 0 0;
+}
 .fire {
   width: 100%;
   height: 100%;
+}
+.trees {
+  background-color: rgba(106, 54, 0, 0.001);
+  width: 10vh;
+  height: 25vh;
+  position: absolute;
+  right: 5%;
+  top: 20%;
+}
+.tree-trunk {
+  background-color: rgb(106, 54, 0);
+  width: 50%;
+  height: 75%;
+  position: absolute;
+  bottom: 0;
+  left: 50%;
+  transform: translateX(-50%);
+  pointer-events: none;
+}
+.tree-leaves {
+  background-color: #246a00;
+  width: 170%;
+  height: 60%;
+  position: absolute;
+  top: 0;
+  left: 50%;
+  transform: translateX(-50%);
+  border-radius: 50%;
+  pointer-events: none;
 }
 h1 {
   font-size: 16px;
@@ -82,7 +130,7 @@ h1.title {
   background-color: rgba(255, 255, 255, 0.5);
   /* display: none; */
 }
-.toolbar {
+.debug-toolbar {
   position: absolute;
   right: 10px;
   top: 10px;
@@ -136,9 +184,13 @@ h1.title {
 }
 .inventory {
   flex: 1 0 50%;
+  background-color: rgb(79 232 0);
 }
-.inventory td {
-  background-color: antiquewhite;
+.inventory td div.move.drop {
+  background-color: rgb(238, 220, 197);
+}
+.inventory td div.move.drop:empty {
+  background-color: rgb(250, 235, 215);
 }
 .inventory-table {
   width: 100%;
