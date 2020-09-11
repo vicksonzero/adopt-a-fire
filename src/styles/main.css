@@ -213,6 +213,7 @@ h1.title {
 .inventory td div.move.drop {
   background-color: rgb(238, 215, 183);
   position: relative;
+  overflow: hidden;
 }
 .inventory td div.move.drop:empty {
   background-color: rgb(250, 235, 215);

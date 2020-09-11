@@ -2,6 +2,7 @@
 
 import { dnd, ep } from './drag.js';
 import './normalizedRAF.js';
+import { ArcadeAudio } from './audio';
 
 const extractPointers = ep;
 const dragAndDrop = dnd;
@@ -58,6 +59,10 @@ const $flame = d.querySelector('.fire-flame');
 const $trees = d.querySelector('.trees');
 /** @type SVGElement */
 const $progressCircle = d.querySelector('circle');
+
+const ac = new ArcadeAudio();
+
+
 
 // width and height for scaling of graphics
 const flameW = $flame.offsetWidth;
@@ -137,9 +142,15 @@ dragAndDrop({
                     newWood.style.visibility = 'hidden';
 
                     const circle = addProgressCircle(dragOrigin.parentNode);
+
+                    const a = setInterval(() => {
+                        ac.play('damage');
+                    }, 1000);
                     // progressCircle.classList.add('animate');
                     // progressCircle.style.visibility = 'visible';
+
                     setTimeout(() => {
+                        clearInterval(a);
                         oldWood.classList.add('drag');
                         newWood.classList.add('drag');
                         newWood.style.visibility = 'visible';
@@ -173,9 +184,9 @@ d.querySelector('button.btn-verbose').addEventListener('pointerup', () => {
 });
 
 const clickTree = () => {
-    if ($progressCircle.style.visibility === 'visible') return;
+    if ($progressCircle.parentNode.parentElement.style.visibility === 'visible') return;
     const cells = getAvailableCells();
-    console.log('chop wood', cells);
+    // console.log('chop wood', cells);
     if (cells.length <= 0) return;
 
     const cell = cells[Math.floor(Math.random() * cells.length)];
@@ -187,7 +198,13 @@ const clickTree = () => {
     newWood.style.visibility = 'hidden';
     $progressCircle.classList.add('animate');
     $progressCircle.parentNode.parentElement.style.visibility = 'visible';
+
+    const a = setInterval(() => {
+        ac.play('damage');
+    }, 1000);
+
     setTimeout(() => {
+        clearInterval(a);
         newWood.classList.add('drag');
         newWood.style.visibility = 'visible';
         $progressCircle.parentNode.parentElement.style.visibility = 'hidden';
@@ -523,6 +540,9 @@ const render = (state) => {
 
     $flame.style.width = ww + 'px';
     $flame.style.height = hh + 'px';
+
+    // console.log('heat / flameScale', heat / flameScale * 0.8);
+    ac.play('fire', Math.min(1, heat / flameScale * 0.8));
 
     const totalFuel = fuels.map(f => f.value).reduce((acc, curr) => acc + curr, 0);
     const richFuel = fuels.filter(f => f.value > 10);
