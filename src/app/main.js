@@ -72,6 +72,8 @@ const woodScale = 500;
             if (mr() > 0.5) {
                 const wood = d.createElement('div');
                 wood.classList.add('drag', 'wood');
+                wood.setAttribute('data-size', '300');
+                wood.style.backgroundSize = Math.random() * 50 + 80 + 'vmin';
                 move.append(wood);
             }
             td.append(move);
@@ -86,19 +88,40 @@ let state = {};
 
 let isDragging = false;
 dragAndDrop({
+    onDrag() {
+        isDragging = true;
+    },
     // return false to to skip DropResponse
-    onDrop(item, dropTarget) {
+    onDrop(e, maxDist, item, dragOrigin, dropTarget) {
         isDragging = false;
         if (dropTarget.classList.contains("fire")) {
             addFuel(makeFuelUnit(state, 1, 0, { temp: 25 }));
             return false;
         }
 
+        if (dropTarget.children.length > 0) {
+            if (dropTarget.children[0] !== dragOrigin) {
+                console.log('swap');
+                const oldTargetItem = dropTarget.children[0];
+                const newElement = dropTarget.appendChild(item.cloneNode(true));
+                newElement.style.position = "";
+                newElement.style.pointerEvents = "";
+                newElement.style.left = "";
+                newElement.style.top = "";
+                dragOrigin.parentNode.appendChild(oldTargetItem);
+                dragOrigin.m = true;
+
+                return false;
+            } else if (item.classList.contains('wood') && maxDist < 10) {
+                console.log('split wood');
+                const cells = getAvailableCells();
+            } else {
+                console.log('drag into same cell');
+            }
+
+        }
         return true;
     },
-    onDrag() {
-        isDragging = true;
-    }
 });
 
 d.querySelector('button.btn-debug').addEventListener('pointerup', () => {
@@ -107,6 +130,12 @@ d.querySelector('button.btn-debug').addEventListener('pointerup', () => {
 d.querySelector('button.btn-verbose').addEventListener('pointerup', () => {
     debugMode = debugMode !== 2 ? 2 : 0;
 });
+
+const clickTree = () => {
+    console.log('chop wood');
+}
+d.querySelector('.trees').addEventListener('click', clickTree);
+d.querySelector('.trees').addEventListener('touchend', clickTree);
 
 {
     let isDown = false;
@@ -156,8 +185,6 @@ const extractPointers = (e) => [
     e.touches ? e.touches[0].pageX : e.pageX,
     e.touches ? e.touches[0].pageY : e.pageY
 ];
-
-const dist = (dx, dy) => Math.sqrt(dx * dx + dy * dy);
 
 const createElementFromHTML = (htmlString) => {
     var div = d.createElement('div');
@@ -347,21 +374,31 @@ const tick = (state) => {
     // console.log(`delta-heat: ${newState.heat - heat}`);
 
 
-    if (!isDragging && mr() <= woodSpawnRate) {
-        const ii = mFloor(mr() * inventoryHeight);
-        const jj = mFloor(mr() * inventoryWidth);
+    // if (!isDragging && mr() <= woodSpawnRate) {
+    //     const ii = mFloor(mr() * inventoryHeight);
+    //     const jj = mFloor(mr() * inventoryWidth);
 
-        /** @type HTMLElement */
-        const $cell = d.querySelector(`.inventory-table>tr:nth-child(${ii + 1})>td:nth-child(${jj + 1})>.move.drop`);
+    //     /** @type HTMLElement */
+    //     const $cell = d.querySelector(`.inventory-table>tr:nth-child(${ii + 1})>td:nth-child(${jj + 1})>.move.drop`);
 
-        if ($cell.children.length === 0) {
-            const wood = d.createElement('div');
-            wood.classList.add('drag', 'wood');
-            $cell.append(wood);
-        }
-    }
+    //     if ($cell.children.length === 0) {
+    //         const wood = d.createElement('div');
+    //         wood.classList.add('drag', 'wood');
+    //         wood.setAttribute('data-size', '300');
+    //         $cell.append(wood);
+    //     }
+    // }
 
     return newState;
+};
+
+const getAvailableCells = () => {
+    const cells = d.querySelectorAll(`.inventory-table .move.drop:empty`);
+    return [...cells];
+};
+
+const collectWood = (cell) => {
+
 };
 
 const addFuel = (fuelUnit) => {
