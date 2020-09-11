@@ -3,6 +3,7 @@
 import { dragAndDrop } from './drag.js';
 import './normalizedRAF.js';
 
+// shortcuts for easier minify. massively reduces minified identifier size
 const d = document;
 // const qs = 'querySelector';
 // const qsa = 'querySelectorAll';
@@ -16,8 +17,8 @@ const mMin = Math.min;
 const mPow = Math.pow;
 const mFloor = Math.floor;
 
-const frameSize = 100; // 10 fps
 let timeScale = 1;
+const frameSize = 100; // 10 fps
 
 const _save = [];
 
