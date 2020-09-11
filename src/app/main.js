@@ -1,7 +1,10 @@
 //@ts-check
 
-import { dragAndDrop } from './drag.js';
+import { dnd, ep } from './drag.js';
 import './normalizedRAF.js';
+
+const extractPointers = ep;
+const dragAndDrop = dnd;
 
 // shortcuts for easier minify. massively reduces minified identifier size
 const d = document;
@@ -10,12 +13,12 @@ const d = document;
 // const ce = 'createElement';
 const str1 = a => JSON.stringify(a);
 const str4 = a => JSON.stringify(a, null, 4);
-const par = JSON.parse;
-const mr = Math.random;
-const mMax = Math.max;
-const mMin = Math.min;
-const mPow = Math.pow;
-const mFloor = Math.floor;
+// const par = JSON.parse;
+// const mr = Math.random;
+// const mMax = Math.max;
+// const mMin = Math.min;
+// const mPow = Math.pow;
+// const mFloor = Math.floor;
 
 let timeScale = 1;
 const frameSize = 100; // 10 fps
@@ -33,7 +36,7 @@ const inventoryHeight = 4;
 const woodAngleAdvanceMin = 360 / 7;
 const woodAngleAdvanceVariation = 360 / 4 - woodAngleAdvanceMin;
 
-let woodAngle = woodAngleAdvanceMin + mr() * woodAngleAdvanceVariation;
+let woodAngle = woodAngleAdvanceMin + Math.random() * woodAngleAdvanceVariation;
 let lastTick = 0;
 let largestFrameSkip = 0;
 let framesSkipped = 0;
@@ -56,12 +59,13 @@ const $trees = d.querySelector('.trees');
 /** @type SVGElement */
 const $progressCircle = d.querySelector('circle');
 
+// width and height for scaling of graphics
 const flameW = $flame.offsetWidth;
 const flameH = $flame.offsetHeight;
 const flameScale = 700;
-const woodW = $wood.offsetWidth;
-const woodH = $wood.offsetHeight;
-const woodScale = 500;
+// const woodW = $wood.offsetWidth;
+// const woodH = $wood.offsetHeight;
+// const woodScale = 500;
 
 (d.querySelector('.inventory-table')
     .append(...([...Array(inventoryHeight)].map(() => {
@@ -73,8 +77,8 @@ const woodScale = 500;
 
             const move = d.createElement('div');
             move.classList.add('move', 'drop');
-            if (mr() > 0.5) {
-                var wood = collectWood(move, mFloor(mr() * 300) + 300);
+            if (Math.random() > 0.5) {
+                var wood = collectWood(move, Math.floor(Math.random() * 300) + 300);
                 wood.classList.add('drag');
             }
             td.append(move);
@@ -119,11 +123,11 @@ dragAndDrop({
                 const cells = getAvailableCells();
 
                 if (cells.length > 0) {
-                    const cell = cells[mFloor(mr() * cells.length)];
+                    const cell = cells[Math.floor(Math.random() * cells.length)];
 
                     const oldWood = dragOrigin;
                     const origSize = Number(oldWood.getAttribute('data-size'));
-                    const oldChunkSize = mFloor(origSize * (mr() * 0.4 + 0.3));
+                    const oldChunkSize = Math.floor(origSize * (Math.random() * 0.4 + 0.3));
                     const newChunkSize = origSize - oldChunkSize;
                     const newWood = collectWood(
                         cell,
@@ -174,11 +178,11 @@ const clickTree = () => {
     console.log('chop wood', cells);
     if (cells.length <= 0) return;
 
-    const cell = cells[mFloor(mr() * cells.length)];
+    const cell = cells[Math.floor(Math.random() * cells.length)];
 
     const newWood = collectWood(
         cell,
-        mFloor(mr() * 500) + 300,
+        Math.floor(Math.random() * 500) + 300,
     );
     newWood.style.visibility = 'hidden';
     $progressCircle.classList.add('animate');
@@ -208,7 +212,7 @@ d.querySelector('.trees').addEventListener('touchend', clickTree);
     d.querySelector('.fire').addEventListener('pointermove', (/** @type PointerEvent*/e) => {
         if (isDown) {
             const [pointerX, pointerY] = extractPointers(e);
-            state._radius = mMin(1, mMax(0, startRadius + (pointerX - startX) / window.innerWidth));
+            state._radius = Math.min(1, Math.max(0, startRadius + (pointerX - startX) / window.innerWidth));
             console.log(state._radius);
         }
     });
@@ -217,7 +221,7 @@ d.querySelector('.trees').addEventListener('touchend', clickTree);
             isDown = false;
             const [pointerX, pointerY] = extractPointers(e);
 
-            state._radius = mMin(1, mMax(0, startRadius + (pointerX - startX) / window.innerWidth));
+            state._radius = Math.min(1, Math.max(0, startRadius + (pointerX - startX) / window.innerWidth));
             changeRadius(state._radius);
         }
     });
@@ -236,13 +240,9 @@ const bindButtons = () => {
 bindButtons();
 
 function easeOut(x) {
-    return 1 - mPow(1 - x, 6);
+    return 1 - Math.pow(1 - x, 6);
 }
 
-const extractPointers = (e) => [
-    e.touches ? e.touches[0].pageX : e.pageX,
-    e.touches ? e.touches[0].pageY : e.pageY
-];
 
 const createElementFromHTML = (htmlString) => {
     var div = d.createElement('div');
@@ -250,7 +250,7 @@ const createElementFromHTML = (htmlString) => {
     return div.firstChild;
 };
 
-const plankCSS = ({ valueStart, id }) => `<div class="wood-plank" data-wood="${id}" style="width: ${10 / 40 * valueStart}px; height: ${mMax(1, 2 / 40 * valueStart)}px;"><div class="temp"></div><div class="ash"></div></div>`;
+const plankCSS = ({ valueStart, id }) => `<div class="wood-plank" data-wood="${id}" style="width: ${10 / 40 * valueStart}px; height: ${Math.max(1, 2 / 40 * valueStart)}px;"><div class="temp"></div><div class="ash"></div></div>`;
 // `transform: scale(1,1) translate(calc(-50%), calc(-50%))  rotateZ(0) translate(${1}, ${1}px);`,
 
 // @ts-ignore
@@ -268,7 +268,7 @@ window.timeScale = (_timeScale) => {
 
 function makeFuelUnit(state, chunkSize, variation, override = {}) {
     state.fuelID++;
-    const value = mFloor(300 * chunkSize * (1 + mr() * variation));
+    const value = Math.floor(300 * chunkSize * (1 + Math.random() * variation));
     return {
         frameID: state.frameID,
         id: state.fuelID,
@@ -278,7 +278,7 @@ function makeFuelUnit(state, chunkSize, variation, override = {}) {
         coolDownRate: 0.010 / chunkSize,
         oxygenReq: 4 * chunkSize,
         fuelReq: 0.2,
-        givesHeatPerTick: 55 * mPow(chunkSize, 1.1),
+        givesHeatPerTick: 55 * Math.pow(chunkSize, 1.1),
         value,
         temp: 25,
         _transferredHeat: 0,
@@ -357,7 +357,7 @@ const init = (fromFrame) => {
 };
 const tick = (state) => {
     const { isRunning, frameID, fuels, heat, oxygen, heatTransferRate, air, wind, woodSpawnRate } = state;
-    let heatBudget = mMax(25, heat + air.heat + (wind.heat || 0));
+    let heatBudget = Math.max(25, heat + air.heat + (wind.heat || 0));
 
     const totalFuel = fuels.map(f => f.value).reduce((acc, curr) => acc + curr, 0);
 
@@ -366,7 +366,7 @@ const tick = (state) => {
     newState.heat = 0;
     newState.fuels = [];
 
-    const maxTemp = [...newState.fuels.map(f => f.temp), heat].reduce((a, b) => mMax(a, b), 0);
+    const maxTemp = [...newState.fuels.map(f => f.temp), heat].reduce((a, b) => Math.max(a, b), 0);
     newState.maxTemp = maxTemp;
     newState.isRunning = (maxTemp >= gameOverTemp);
     if (isRunning && !newState.isRunning) {
@@ -398,24 +398,24 @@ const tick = (state) => {
         heatBudget -= _transferredHeat;
         let _oxygenGiven = 0;
         newFuel.temp += _transferredHeat;
-        if (newFuel.value <= 50) newFuel.temp *= (1 - coolDownRate * mPow(0.95, i));
+        if (newFuel.value <= 50) newFuel.temp *= (1 - coolDownRate * Math.pow(0.95, i));
 
         if (newFuel.temp >= heatReq) {
-            const oxygenTaken = mMin(newState.oxygen * mPow(state.radius, 0.5), oxygenReq * mPow(newFuel.temp / heatReq, 1 / 20));
+            const oxygenTaken = Math.min(newState.oxygen * Math.pow(state.radius, 0.5), oxygenReq * Math.pow(newFuel.temp / heatReq, 1 / 20));
             const oxygenTakenPercent = oxygenTaken / oxygenReq;
 
-            const fuelTaken = mMax(1, mMin(value, fuelReq * oxygenTakenPercent));
+            const fuelTaken = Math.max(1, Math.min(value, fuelReq * oxygenTakenPercent));
             const fuelTakenPercent = fuelTaken / fuelReq;
 
-            const conversionPercent = mMax(0.0001, mMin(oxygenTakenPercent, fuelTakenPercent));
+            const conversionPercent = Math.max(0.0001, Math.min(oxygenTakenPercent, fuelTakenPercent));
 
             _oxygenGiven = oxygenReq * conversionPercent;
             // newState.oxygen -= _oxygenGiven;
             newFuel.value -= fuelReq * conversionPercent * 2;
             heatBudget += givesHeatPerTick * conversionPercent;
-            newFuel.value = mMax(0.001, newFuel.value);
+            newFuel.value = Math.max(0.001, newFuel.value);
         }
-        newState.oxygen *= 0.98 * mPow(state.radius, 1 / 2);
+        newState.oxygen *= 0.98 * Math.pow(state.radius, 1 / 2);
         // newState.oxygen *= state.oxygenDepreciation / mPow(state.radius, 1 / 6);
         const _oxygenChange = stepOxygen - newState.oxygen;
         const _heatChange = newFuel.temp - temp;
@@ -423,11 +423,11 @@ const tick = (state) => {
         newState.fuels.push({ ...newFuel, _transferredHeat, _heatChange, _oxygenGiven, _oxygenChange });
     }
     newState.fuels.reverse();
-    newState._heatLoss = mPow(1.1 - state.radius, 1 / 8) * mMin(1, mPow(newState.fuels.length / 4.1, 4));
+    newState._heatLoss = Math.pow(1.1 - state.radius, 1 / 8) * Math.min(1, Math.pow(newState.fuels.length / 4.1, 4));
     newState.heat += heatBudget * newState._heatLoss;
     newState._remainingOxygen = newState.oxygen;
-    newState.oxygen = air.oxygen / 30 * mPow(state.radius, 1 / 2) + (wind.oxygen || 0);
-    newState._largestFlame = mMax(newState._largestFlame, newState.heat);
+    newState.oxygen = air.oxygen / 30 * Math.pow(state.radius, 1 / 2) + (wind.oxygen || 0);
+    newState._largestFlame = Math.max(newState._largestFlame, newState.heat);
 
     // console.log(`delta-heat: ${newState.heat - heat}`);
 
@@ -466,11 +466,11 @@ function collectWood(cell, chunkSize) {
 };
 
 const addProgressCircle = (cell) => {
-    const circle = cell.appendChild($progressCircle.parentNode.parentNode.cloneNode(true));
-    circle.querySelector('circle').classList.add('animate');
-    circle.querySelector('svg').style.visibility = 'visible';
-    circle.style.top = '50%';
-    return circle;
+    const prograssDiv = cell.appendChild($progressCircle.parentNode.parentNode.cloneNode(true));
+    prograssDiv.querySelector('circle').classList.add('animate');
+    prograssDiv.querySelector('svg').style.visibility = 'visible';
+    prograssDiv.style.top = '50%';
+    return prograssDiv;
 }
 
 const addFuel = (fuelUnit) => {
@@ -478,8 +478,8 @@ const addFuel = (fuelUnit) => {
     /** @type any */
     let wood;
     $wood.appendChild(wood = createElementFromHTML(plankCSS(fuelUnit)));
-    wood.style.transform = `translate(calc(-50% + 1px), calc(-50% + 1px)) scale(1, 1) rotateZ(${woodAngle}deg) translate(${mr() * 5}px, ${state.radius / mPow(state.fuels.length, 3)}px)`;
-    woodAngle += woodAngleAdvanceMin + mr() * woodAngleAdvanceVariation;
+    wood.style.transform = `translate(calc(-50% + 1px), calc(-50% + 1px)) scale(1, 1) rotateZ(${woodAngle}deg) translate(${Math.random() * 5}px, ${state.radius / Math.pow(state.fuels.length, 3)}px)`;
+    woodAngle += woodAngleAdvanceMin + Math.random() * woodAngleAdvanceVariation;
     _save.push(str1(fuelUnit));
 };
 
@@ -489,14 +489,14 @@ const addSpark = (heat) => {
 };
 
 const changeRadius = (radius) => {
-    state.radius = mMax(0, mMin(1, radius));
+    state.radius = Math.max(0, Math.min(1, radius));
     _save.push(str1(state));
 };
 // @ts-ignore
 window.changeRadius = changeRadius;
 
 const render = (state) => {
-    const variation = mr() * 0.2 + 0.8;
+    const variation = Math.random() * 0.2 + 0.8;
 
     const {
         frameID,
@@ -533,7 +533,7 @@ const render = (state) => {
 
         const { valueStart, value, temp, id, frameID: fuelUnitFrameID } = fuelUnit;
         const v = value / valueStart;
-        const scale = mPow(v, 1.6) * 0.3 + 0.7;
+        const scale = Math.pow(v, 1.6) * 0.3 + 0.7;
         // const scale = 1;
 
         /** @type HTMLElement */
@@ -541,7 +541,7 @@ const render = (state) => {
         if (!wood) return;
 
         const fireWoodHeight = 1.5;
-        const placementOffset = mMin(1, (frameID - fuelUnitFrameID) / frameSize * 20) * 40 - 40;
+        const placementOffset = Math.min(1, (frameID - fuelUnitFrameID) / frameSize * 20) * 40 - 40;
         const transformPart = wood.style.transform
             .replace(/scale\([\d\.]+, [\d\.]+\)/, `scale(${scale}, ${scale})`)
             .replace(/translate\(calc\(-50\% \+ [-\d\.]+px\), calc\(-50\% \+ [-\d\.]+px\)\)/, `translate(calc(-50% + ${2}px), calc(-50% + ${richFuel.length * fireWoodHeight + elevation * -3 + placementOffset}px))`)
@@ -551,9 +551,9 @@ const render = (state) => {
 
         const renderedRadius = (10
             * state._radius
-            * mPow(fuels.length, 0.15)
-            * ((fuels.length - i) < 10 ? mPow(1.3, ((fuels.length - i) / 2))
-                : mPow(1.2, (10 / 2)) + (6 - 6 / mPow(fuels.length - i - 10, 1 / 10))
+            * Math.pow(fuels.length, 0.15)
+            * ((fuels.length - i) < 10 ? Math.pow(1.3, ((fuels.length - i) / 2))
+                : Math.pow(1.2, (10 / 2)) + (6 - 6 / Math.pow(fuels.length - i - 10, 1 / 10))
             )
         );
         // `scale(1,1) translate(calc(-50%), calc(-50%))  rotateZ(${woodAngle}deg) translate(${mr() * 5}px, ${state.radius / mPow(state.fuels.length, 3)}px)`;
@@ -562,13 +562,13 @@ const render = (state) => {
         // mPow(mPow(fuels.length, 0.8) * state._radius, 2) * 1.8 / mPow(i, 1 / 2)
 
         wood.style.backgroundColor = 'hsl(36°, 49%, 39%)';
-        wood.style.opacity = `${.7 * mPow(mMax(1, value / 50), 2)}`;
+        wood.style.opacity = `${.7 * Math.pow(Math.max(1, value / 50), 2)}`;
         /** @type HTMLElement */
         const t = wood.querySelector('.temp');
-        t.style.opacity = `${.5 * mPow(mMin(1, temp / 800), 2)}`;
+        t.style.opacity = `${.5 * Math.pow(Math.min(1, temp / 800), 2)}`;
         /** @type HTMLElement */
         const a = wood.querySelector('.ash');
-        a.style.opacity = `${.9 * mPow(1 - v, 1.5)}`;
+        a.style.opacity = `${.9 * Math.pow(1 - v, 1.5)}`;
     });
     // $wood.style.width = (woodW * totalFuel / woodScale) + 'px';
     // $wood.style.height = (woodH * totalFuel / woodScale) + 'px';
@@ -585,9 +585,9 @@ const render = (state) => {
     }
     const elapsedSecond = (frameID - fromFrame) * frameSize / 1000;
     const timeString = (`` +
-        (elapsedSecond < 86400 ? '' : `${('' + mFloor(elapsedSecond / 86400)).padStart(2, '0')}d`) +
-        (elapsedSecond < 3600 ? '' : `${('' + mFloor((elapsedSecond % 86400) / 3600)).padStart(2, '0')}h`) +
-        (elapsedSecond < 60 ? '' : `${('' + mFloor((elapsedSecond % 3600) / 60)).padStart(2, '0')}m`) +
+        (elapsedSecond < 86400 ? '' : `${('' + Math.floor(elapsedSecond / 86400)).padStart(2, '0')}d`) +
+        (elapsedSecond < 3600 ? '' : `${('' + Math.floor((elapsedSecond % 86400) / 3600)).padStart(2, '0')}h`) +
+        (elapsedSecond < 60 ? '' : `${('' + Math.floor((elapsedSecond % 3600) / 60)).padStart(2, '0')}m`) +
         `${(elapsedSecond % 60).toFixed(1).padStart(4, '0')}s`
     );
     if (debugMode === 1) {
@@ -664,7 +664,7 @@ const main = () => {
         //     .join('\n')
         // );
         if (i > 0) render(state);
-        if (i > 1) largestFrameSkip = mMax(largestFrameSkip, i - 1);
+        if (i > 1) largestFrameSkip = Math.max(largestFrameSkip, i - 1);
         if (i > 1) framesSkipped += i - 1;
 
         requestAnimationFrame(a);
