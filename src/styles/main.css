@@ -171,13 +171,13 @@ h1.title {
   left: 10px;
   top: 20px;
   pointer-events: none;
-  background-color: rgba(255, 255, 255, 0.5);
+  /* background-color: rgba(255, 255, 255, 0.5); */
   /* display: none; */
 }
 .debug-toolbar {
   position: absolute;
-  right: 10px;
-  top: 10px;
+  left: 10px;
+  bottom: 10px;
 }
 .fire-wood {
   width: 38px;
@@ -251,7 +251,7 @@ h1.title {
 }
 .inventory {
   flex: 1 0 50%;
-  background-color: rgb(79 232 0);
+  background-color: #7bde0e;
 }
 .inventory td div.move.drop {
   background-color: rgb(238, 215, 183);
