@@ -130,6 +130,9 @@ h1.title {
   top: 0;
   pointer-events: none;
 }
+h1.title a{
+  pointer-events: auto;
+}
 .result {
   position: absolute;
   top: 0;
