@@ -5,10 +5,10 @@ export class ArcadeAudio {
     constructor() {
         this.sounds = {};
 
-        this.add('damage', 3,
+        this.add('chop', 3,
             [
                 [3, , 0.0138, , 0.2701, 0.4935, , -0.6881, , , , , , , , , , , 1, , , , , 0.17],
-                [0, , 0.0639, , 0.2425, 0.7582, , -0.6217, , , , , , 0.4039, , , , , 1, , , , , 0.17],
+                [0, , 0.0639, , 0.2425, 0.7582, , -0.6217, , , , , , 0.4039, , , , , 1, , , 0.1, , 0.17],
                 [3, , 0.0948, , 0.2116, 0.7188, , -0.6372, , , , , , , , , , , 1, , , 0.2236, , 0.17],
             ]
         );
@@ -44,7 +44,7 @@ export class ArcadeAudio {
         var sound = this.sounds[key];
         var soundData = sound.length > 1 ? sound[Math.floor(Math.random() * sound.length)] : sound[0];
         soundData.pool[soundData.tick].volume = volume;
-        soundData.pool[soundData.tick].play();
+        soundData.pool[soundData.tick].play().catch(e => {/* do nothing */ });
         soundData.tick < soundData.count - 1 ? soundData.tick++ : soundData.tick = 0;
     }
 
