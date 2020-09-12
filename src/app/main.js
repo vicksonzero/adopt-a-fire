@@ -128,13 +128,14 @@ dragAndDrop({
                 return false;
             } else if (item.classList.contains('wood') && maxDist < 10) {
                 console.log('split wood');
+                const oldWood = dragOrigin;
+                const origSize = Number(oldWood.getAttribute('data-size'));
+
                 const cells = getAvailableCells();
 
-                if (cells.length > 0) {
+                if (cells.length > 0 && origSize >= 100) {
                     const cell = cells[Math.floor(Math.random() * cells.length)];
 
-                    const oldWood = dragOrigin;
-                    const origSize = Number(oldWood.getAttribute('data-size'));
                     const oldChunkSize = Math.floor(origSize * (Math.random() * 0.4 + 0.3));
                     const newChunkSize = origSize - oldChunkSize;
                     const newWood = collectWood(
@@ -183,9 +184,9 @@ dragAndDrop({
 d.querySelector('button.btn-debug').addEventListener('pointerup', () => {
     debugMode = debugMode !== 1 ? 1 : 0;
 });
-d.querySelector('button.btn-verbose').addEventListener('pointerup', () => {
-    debugMode = debugMode !== 2 ? 2 : 0;
-});
+// d.querySelector('button.btn-verbose').addEventListener('pointerup', () => {
+//     debugMode = debugMode !== 2 ? 2 : 0;
+// });
 
 const clickTree = () => {
     if ($progressCircle.parentNode.parentElement.style.visibility === 'visible') return;
@@ -232,6 +233,7 @@ d.querySelector('.trees').addEventListener('touchend', clickTree);
         isDown = true;
         startRadius = state.radius;
         $radius.style.visibility = 'visible';
+        $radius.children[0].style.width = `${state._radius * 100}%`;
     });
     d.querySelector('.fire').addEventListener('pointermove', (/** @type PointerEvent*/e) => {
         if (isDown) {
@@ -630,27 +632,15 @@ const render = (state) => {
         (elapsedSecond < 60 ? '' : `${('' + Math.floor((elapsedSecond % 3600) / 60)).padStart(2, '0')}m`) +
         `${(elapsedSecond % 60).toFixed(1).padStart(4, '0')}s`
     );
-    if (debugMode === 0) {
+    if (debugMode === 1) {
         $debug.style.display = 'block';
         $debug.innerHTML = `<pre>` +
             `Time: ${timeString}\n` +
             `totalFuel: ${totalFuel.toFixed(2)}\n` +
             `heat: ${heat.toFixed(2)}\n` +
             `oxygen: ${_remainingOxygen.toFixed(2)}/${oxygen.toFixed(2)}\n` +
-            `_largestFlame: ${_largestFlame.toFixed(2)}\n` +
-            `_largestFrameSkip: ${largestFrameSkip}\n_totalFrameSkipped: ${framesSkipped}\n` +
-            `</pre>`
-            ;
-    }
-    if (debugMode === 1) {
-        $debug.style.display = 'block';
-        $debug.innerHTML = `<pre>` +
-            `frameID: #${frameID} (${timeString}), timeScale: ${timeScale}\n` +
-            `totalFuel: ${totalFuel.toFixed(2)}\n` +
-            `heat: ${heat.toFixed(2)} (-${(1 - _heatLoss).toFixed(2)})\n` +
-            `oxygen: ${_remainingOxygen.toFixed(2)}/${oxygen.toFixed(2)}\n` +
-            `_largestFrameSkip: ${largestFrameSkip}\n_totalFrameSkipped: ${framesSkipped}\n` +
-            `_largestFlame: ${_largestFlame}\n` +
+            `Largest Flame: ${_largestFlame.toFixed(2)}\n` +
+            // `LargestFrameSkip: ${largestFrameSkip} TotalFrameSkipped: ${framesSkipped}\n` +
             `</pre>`
             ;
     }

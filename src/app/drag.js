@@ -103,7 +103,7 @@ exports.dnd = delegates => {
 
             // hide origin if we want to move it
             if (dragOrigin.parentNode.classList.contains("move")) {
-                // dragOrigin.style.visibility = "hidden";
+                dragOrigin.style.visibility = "hidden";
                 dragOrigin.m = 1; // isMove
             }
 
