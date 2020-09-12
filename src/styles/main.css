@@ -97,6 +97,17 @@ circle.animate {
     stroke-dashoffset: 0;
   }
 }
+circle.refill {
+  animation: rotate2 30s linear;
+}
+@keyframes rotate2 {
+  from {
+    stroke-dashoffset: 0;
+  }
+  to {
+    stroke-dashoffset: 300;
+  }
+}
 h1 {
   font-size: 16px;
 }
@@ -205,6 +216,20 @@ h1.title {
   background-repeat: no-repeat;
   background-position: center center;
   opacity: 0.9;
+}
+.fire-radius {
+  position: absolute;
+  left: 50%;
+  top: 80%;
+  transform: translate(-50%, -50%);
+  border: 1px solid #fff;
+  width: 100px;
+  height: 10px;
+}
+.fire-radius div {
+  background-color: #fff;
+  height: 100%;
+  width: 50%;
 }
 .inventory {
   flex: 1 0 50%;

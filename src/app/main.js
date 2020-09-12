@@ -1,8 +1,8 @@
 //@ts-check
 
+import { ArcadeAudio } from './audio';
 import { dnd, ep } from './drag.js';
 import './normalizedRAF.js';
-import { ArcadeAudio } from './audio';
 
 const extractPointers = ep;
 const dragAndDrop = dnd;
@@ -59,9 +59,12 @@ const $flame = d.querySelector('.fire-flame');
 const $trees = d.querySelector('.trees');
 /** @type SVGElement */
 const $progressCircle = d.querySelector('circle');
+/** @type HTMLElement */
+const $radius = d.querySelector('.fire-radius');
+
 
 const ac = new ArcadeAudio();
-
+// setInterval(() => { ac.play('chop') }, 1000)
 
 
 // width and height for scaling of graphics
@@ -143,8 +146,9 @@ dragAndDrop({
 
                     const circle = addProgressCircle(dragOrigin.parentNode);
 
+                    ac.play('chop');
                     const a = setInterval(() => {
-                        ac.play('damage');
+                        ac.play('chop');
                     }, 1000);
                     // progressCircle.classList.add('animate');
                     // progressCircle.style.visibility = 'visible';
@@ -199,8 +203,9 @@ const clickTree = () => {
     $progressCircle.classList.add('animate');
     $progressCircle.parentNode.parentElement.style.visibility = 'visible';
 
+    ac.play('chop');
     const a = setInterval(() => {
-        ac.play('damage');
+        ac.play('chop');
     }, 1000);
 
     setTimeout(() => {
@@ -225,11 +230,13 @@ d.querySelector('.trees').addEventListener('touchend', clickTree);
         [startX, startY] = extractPointers(e);
         isDown = true;
         startRadius = state.radius;
+        $radius.style.visibility = 'visible';
     });
     d.querySelector('.fire').addEventListener('pointermove', (/** @type PointerEvent*/e) => {
         if (isDown) {
             const [pointerX, pointerY] = extractPointers(e);
             state._radius = Math.min(1, Math.max(0, startRadius + (pointerX - startX) / window.innerWidth));
+            $radius.children[0].style.width = `${state._radius * 100}%`;
             console.log(state._radius);
         }
     });
@@ -237,6 +244,7 @@ d.querySelector('.trees').addEventListener('touchend', clickTree);
         if (isDown) {
             isDown = false;
             const [pointerX, pointerY] = extractPointers(e);
+            $radius.style.visibility = 'hidden';
 
             state._radius = Math.min(1, Math.max(0, startRadius + (pointerX - startX) / window.innerWidth));
             changeRadius(state._radius);
@@ -373,7 +381,7 @@ const init = (fromFrame) => {
     _save.push(str1(state));
 };
 const tick = (state) => {
-    const { isRunning, frameID, fuels, heat, oxygen, heatTransferRate, air, wind, woodSpawnRate } = state;
+    const { isRunning, frameID, fuels, heat, oxygen, heatTransferRate, air, wind, woodSpawnRate, radius } = state;
     let heatBudget = Math.max(25, heat + air.heat + (wind.heat || 0));
 
     const totalFuel = fuels.map(f => f.value).reduce((acc, curr) => acc + curr, 0);
@@ -418,7 +426,7 @@ const tick = (state) => {
         if (newFuel.value <= 50) newFuel.temp *= (1 - coolDownRate * Math.pow(0.95, i));
 
         if (newFuel.temp >= heatReq) {
-            const oxygenTaken = Math.min(newState.oxygen * Math.pow(state.radius, 0.5), oxygenReq * Math.pow(newFuel.temp / heatReq, 1 / 20));
+            const oxygenTaken = Math.min(newState.oxygen * Math.pow(radius, 0.5), oxygenReq * Math.pow(newFuel.temp / heatReq, 1 / 20));
             const oxygenTakenPercent = oxygenTaken / oxygenReq;
 
             const fuelTaken = Math.max(1, Math.min(value, fuelReq * oxygenTakenPercent));
@@ -432,18 +440,18 @@ const tick = (state) => {
             heatBudget += givesHeatPerTick * conversionPercent;
             newFuel.value = Math.max(0.001, newFuel.value);
         }
-        newState.oxygen *= 0.98 * Math.pow(state.radius, 1 / 2);
-        // newState.oxygen *= state.oxygenDepreciation / mPow(state.radius, 1 / 6);
+        newState.oxygen *= 0.98 * Math.pow(radius, 1 / 2);
+        // newState.oxygen *= state.oxygenDepreciation / mPow(radius, 1 / 6);
         const _oxygenChange = stepOxygen - newState.oxygen;
         const _heatChange = newFuel.temp - temp;
 
         newState.fuels.push({ ...newFuel, _transferredHeat, _heatChange, _oxygenGiven, _oxygenChange });
     }
     newState.fuels.reverse();
-    newState._heatLoss = Math.pow(1.1 - state.radius, 1 / 8) * Math.min(1, Math.pow(newState.fuels.length / 4.1, 4));
+    newState._heatLoss = Math.pow(1.1 - radius, 1 / 8) * Math.min(1, Math.pow(newState.fuels.length / 4.1, 4));
     newState.heat += heatBudget * newState._heatLoss;
     newState._remainingOxygen = newState.oxygen;
-    newState.oxygen = air.oxygen / 30 * Math.pow(state.radius, 1 / 2) + (wind.oxygen || 0);
+    newState.oxygen = air.oxygen / 30 * Math.pow(radius, 1 / 2) + (wind.oxygen || 0);
     newState._largestFlame = Math.max(newState._largestFlame, newState.heat);
 
     // console.log(`delta-heat: ${newState.heat - heat}`);
