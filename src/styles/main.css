@@ -73,11 +73,20 @@ body {
   border-radius: 50%;
   pointer-events: none;
 }
-.tree-progress {
+.tree-progress,
+.tree-tips {
   position: absolute;
   left: 50%;
   top: 65%;
   transform: translate(-50%, -50%);
+}
+.tree-tips {
+  position: absolute;
+  left: 50%;
+  top: 80%;
+  color: white;
+  text-align: center;
+  width: 100px;
 }
 circle {
   fill: none;
@@ -216,6 +225,15 @@ h1.title {
   background-repeat: no-repeat;
   background-position: center center;
   opacity: 0.9;
+}
+.fire-tips {
+  position: absolute;
+  left: 50%;
+  top: 85%;
+  transform: translate(-50%, -50%);
+  color: white;
+  text-align: center;
+  width: 200px;
 }
 .fire-radius {
   position: absolute;
