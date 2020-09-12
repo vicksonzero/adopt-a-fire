@@ -202,6 +202,7 @@ const clickTree = () => {
     newWood.style.visibility = 'hidden';
     $progressCircle.classList.add('animate');
     $progressCircle.parentNode.parentElement.style.visibility = 'visible';
+    d.querySelector('.tree-tips').style.visibility = 'hidden';
 
     ac.play('chop');
     const a = setInterval(() => {
@@ -237,7 +238,7 @@ d.querySelector('.trees').addEventListener('touchend', clickTree);
             const [pointerX, pointerY] = extractPointers(e);
             state._radius = Math.min(1, Math.max(0, startRadius + (pointerX - startX) / window.innerWidth));
             $radius.children[0].style.width = `${state._radius * 100}%`;
-            console.log(state._radius);
+            // console.log(state._radius);
         }
     });
     d.querySelector('.fire').addEventListener('pointerup', (e) => {
@@ -245,6 +246,7 @@ d.querySelector('.trees').addEventListener('touchend', clickTree);
             isDown = false;
             const [pointerX, pointerY] = extractPointers(e);
             $radius.style.visibility = 'hidden';
+            d.querySelector('.fire-tips').style.visibility = 'hidden';
 
             state._radius = Math.min(1, Math.max(0, startRadius + (pointerX - startX) / window.innerWidth));
             changeRadius(state._radius);
@@ -253,13 +255,22 @@ d.querySelector('.trees').addEventListener('touchend', clickTree);
 }
 
 const bindButtons = () => {
+    let a = true;
     d.querySelector('button.start').addEventListener('pointerup', () => {
         addSpark(400);
+        if (a) {
+            setTimeout(() => {
+                d.querySelector('.tree-tips').style.visibility = 'visible';
+                d.querySelector('.fire-tips').style.visibility = 'visible';
+            }, 5000);
+            a = false;
+        }
     });
     const $reset = d.querySelector('button.reset');
     if ($reset) $reset.addEventListener('pointerup', () => {
-        console.log('reset', state.frameID);
+        // console.log('reset', state.frameID);
         init(state.frameID);
+        addSpark(400);
     });
 };
 bindButtons();
