@@ -259,6 +259,7 @@ const bindButtons = () => {
     d.querySelector('button.start').addEventListener('pointerup', () => {
         addSpark(400);
         if (a) {
+            state.fromFrame = state.frameID;
             setTimeout(() => {
                 d.querySelector('.tree-tips').style.visibility = 'visible';
                 d.querySelector('.fire-tips').style.visibility = 'visible';
@@ -430,7 +431,7 @@ const tick = (state) => {
 
         const stepOxygen = newState.oxygen;
 
-        let _transferredHeat = (heatBudget - temp) * heatTransferRate * heatUpRate; // * value / 100
+        let _transferredHeat = (heatBudget - temp) * heatTransferRate * heatUpRate / Math.pow(Math.max(0.5, (value + 0.00001) / 300), 2); // * value / 100
         heatBudget -= _transferredHeat;
         let _oxygenGiven = 0;
         newFuel.temp += _transferredHeat;
@@ -629,6 +630,18 @@ const render = (state) => {
         (elapsedSecond < 60 ? '' : `${('' + Math.floor((elapsedSecond % 3600) / 60)).padStart(2, '0')}m`) +
         `${(elapsedSecond % 60).toFixed(1).padStart(4, '0')}s`
     );
+    if (debugMode === 0) {
+        $debug.style.display = 'block';
+        $debug.innerHTML = `<pre>` +
+            `Time: ${timeString}\n` +
+            `totalFuel: ${totalFuel.toFixed(2)}\n` +
+            `heat: ${heat.toFixed(2)}\n` +
+            `oxygen: ${_remainingOxygen.toFixed(2)}/${oxygen.toFixed(2)}\n` +
+            `_largestFlame: ${_largestFlame.toFixed(2)}\n` +
+            `_largestFrameSkip: ${largestFrameSkip}\n_totalFrameSkipped: ${framesSkipped}\n` +
+            `</pre>`
+            ;
+    }
     if (debugMode === 1) {
         $debug.style.display = 'block';
         $debug.innerHTML = `<pre>` +
@@ -637,6 +650,7 @@ const render = (state) => {
             `heat: ${heat.toFixed(2)} (-${(1 - _heatLoss).toFixed(2)})\n` +
             `oxygen: ${_remainingOxygen.toFixed(2)}/${oxygen.toFixed(2)}\n` +
             `_largestFrameSkip: ${largestFrameSkip}\n_totalFrameSkipped: ${framesSkipped}\n` +
+            `_largestFlame: ${_largestFlame}\n` +
             `</pre>`
             ;
     }
