@@ -46,7 +46,10 @@ exports.dnd = delegates => {
 
     const pointerdown = e => {
         // console.log('e', e);
-        e.preventDefault();
+
+        if (!dragOrigin.classList.contains("noDrag")) {
+            e.preventDefault();
+        }
         isDragging = 1;
         if (dragContainer) {
             // if somehow the window did not catch the mouseup event
@@ -69,6 +72,7 @@ exports.dnd = delegates => {
         }
 
         // recursively get a parent of the element that may have a "drag" class
+        console.log('dragOrigin.classList', dragOrigin.classList);
         while (dragOrigin != d && !dragOrigin.classList.contains("drag")) {
             dragOrigin = dragOrigin.parentNode;
         }
@@ -132,7 +136,9 @@ exports.dnd = delegates => {
     }
 
     const pointerup = e => {
-        e.preventDefault();
+        if (!dragOrigin.classList.contains("noDrag")) {
+            e.preventDefault();
+        }
         if (dragContainer) {
             isDragging = 0;
             if (e.touches) {
