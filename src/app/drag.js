@@ -47,7 +47,7 @@ exports.dnd = delegates => {
     const pointerdown = e => {
         // console.log('e', e);
 
-        if (!dragOrigin.classList.contains("noDrag")) {
+        if (!dragOrigin || !dragOrigin.classList.contains("noDrag")) {
             e.preventDefault();
         }
         isDragging = 1;
@@ -136,7 +136,7 @@ exports.dnd = delegates => {
     }
 
     const pointerup = e => {
-        if (!dragOrigin.classList.contains("noDrag")) {
+        if (!dragOrigin || !dragOrigin.classList.contains("noDrag")) {
             e.preventDefault();
         }
         if (dragContainer) {
